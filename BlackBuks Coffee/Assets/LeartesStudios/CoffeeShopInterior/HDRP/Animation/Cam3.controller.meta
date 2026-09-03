@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 72ad8ebb50db2784e8c7abd3d8cf8b7e
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 217600
+  packageName: Coffee Shop Environment
+  packageVersion: 2.1
+  assetPath: Assets/LeartesStudios/CoffeeShopInterior/HDRP/Animation/Cam3.controller
+  uploadId: 598863

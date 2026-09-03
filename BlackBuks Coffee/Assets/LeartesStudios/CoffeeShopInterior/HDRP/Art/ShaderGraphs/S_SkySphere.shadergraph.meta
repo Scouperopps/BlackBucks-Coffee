@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 6b518d30f5054864ea4ea47cc8741ba9
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: 11500000, guid: 625f186215c104763be7675aa2d941aa, type: 3}
+AssetOrigin:
+  serializedVersion: 1
+  productId: 217600
+  packageName: Coffee Shop Environment
+  packageVersion: 2.1
+  assetPath: Assets/LeartesStudios/CoffeeShopInterior/HDRP/Art/ShaderGraphs/S_SkySphere.shadergraph
+  uploadId: 598863
