@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: b97bbef230b6bf64cb23dc8475e7796e
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - sphereHolder: {instanceID: 0}
+  - redSpherePrefab: {fileID: 6970291796301594465, guid: e95a38f95707c28408fe8c1c2e9f5a06, type: 3}
+  - blueSpherePrefab: {fileID: 6402222315063322225, guid: 0930b9e0aa31fca4d828b7225e166974, type: 3}
+  - greenSpherePrefab: {fileID: 4151071066083449608, guid: c1d928eef2687804c8fb1b05c65d7462, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
