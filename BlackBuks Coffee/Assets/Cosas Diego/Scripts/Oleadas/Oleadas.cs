@@ -14,8 +14,9 @@ public class WaveData
 public class LevelData
 {
     public string levelName = "Nivel";
-    public float shiftDuration = 120f;     
+    public float shiftDuration = 120f;     // para el GameManager cuando lo tengas
     public float customerPatience = 15f;   // se le pasa a cada cliente al crearlo
+    public int maxItemsPerOrder = 1;       // cada cliente pide entre 1 y este número de esferas
     public List<WaveData> waves = new List<WaveData>();
 }
 
@@ -31,15 +32,15 @@ public class WaveManager : MonoBehaviour
     [SerializeField] private CustomerTesting customerPrefab;
 
     [Header("Puntos de la escena")]
-    [SerializeField] private Transform spawnPoint;      
-    [SerializeField] private Transform customerPoint;   
-    [SerializeField] private Transform exitPoint;       
+    [SerializeField] private Transform spawnPoint;      // la puerta
+    [SerializeField] private Transform customerPoint;   // donde espera su pedido
+    [SerializeField] private Transform exitPoint;       // por donde se va
 
     [Header("Niveles (cada uno con sus oleadas)")]
     public List<LevelData> levels = new List<LevelData>();
 
     [Header("Configuración General")]
-    [SerializeField] private bool autoStart = true;     
+    [SerializeField] private bool autoStart = true;     // desmárcalo si el menú está en la misma escena
     public float timeBetweenWaves = 3f;
     [Range(0f, 0.5f)] public float spawnJitter = 0.2f;  // variación aleatoria del intervalo
 
@@ -48,9 +49,9 @@ public class WaveManager : MonoBehaviour
 
     public int ActiveCustomers => activeCustomers;
 
-    public System.Action<int> OnWaveStarted;            
+    public System.Action<int> OnWaveStarted;            // índice de la oleada
     public System.Action OnAllWavesCompleted;
-    public System.Action<bool> OnCustomerResolved;      
+    public System.Action<bool> OnCustomerResolved;      // true = satisfecho, false = se fue molesto
 
     private void Start()
     {
@@ -78,25 +79,25 @@ public class WaveManager : MonoBehaviour
         {
             yield return new WaitForSeconds(timeBetweenWaves);
             OnWaveStarted?.Invoke(i);
-            yield return StartCoroutine(SpawnWave(level.waves[i], level.customerPatience));
+            yield return StartCoroutine(SpawnWave(level.waves[i], level.customerPatience, level.maxItemsPerOrder));
         }
 
         Debug.Log("[WaveManager] Todas las oleadas completadas.");
         OnAllWavesCompleted?.Invoke();
     }
 
-    private IEnumerator SpawnWave(WaveData wave, float patience)
+    private IEnumerator SpawnWave(WaveData wave, float patience, int maxItems)
     {
         for (int i = 0; i < wave.customerCount; i++)
         {
-            SpawnCustomer(patience);
+            SpawnCustomer(patience, maxItems);
 
             float jitter = Random.Range(1f - spawnJitter, 1f + spawnJitter);
             yield return new WaitForSeconds(wave.timeBetweenSpawns * jitter);
         }
     }
 
-    private void SpawnCustomer(float patience)
+    private void SpawnCustomer(float patience, int maxItems)
     {
         if (customerPrefab == null || spawnPoint == null)
         {
@@ -105,7 +106,7 @@ public class WaveManager : MonoBehaviour
         }
 
         CustomerTesting customer = Instantiate(customerPrefab, spawnPoint.position, spawnPoint.rotation);
-        customer.Init(customerPoint, exitPoint, patience);
+        customer.Init(customerPoint, exitPoint, patience, maxItems);
         customer.OnCustomerLeft += HandleCustomerLeft;
         activeCustomers++;
     }

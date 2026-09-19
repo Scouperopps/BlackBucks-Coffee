@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class CustomerTesting : MonoBehaviour, IInteractable
@@ -21,15 +22,29 @@ public class CustomerTesting : MonoBehaviour, IInteractable
 
     [Header("Paciencia")]
     [SerializeField] private float tiempoMaximoDeEspera = 15f; // segundos esperando ser atendido
+    [SerializeField] private float tiempoExtraPorItem = 5f;    // segundos extra por cada esfera adicional del pedido
+
+    [Header("Pedido")]
+    [SerializeField, Min(1)] private int maxItemsPorPedido = 1; // el pedido tendrá entre 1 y este número de esferas
 
     // Evento opcional para que un manager reaccione (puntaje, spawn del siguiente cliente, etc.)
-    // bool satisfecho = true si se le entregó el pedido correcto, false si se fue por impaciencia
+    // bool satisfecho = true si se le entregó el pedido completo, false si se fue por impaciencia
     public event Action<CustomerTesting, bool> OnCustomerLeft;
 
-    private SphereColor requestedColor;
+    // Esferas que todavía faltan por entregarle
+    private readonly List<SphereColor> pendingOrder = new List<SphereColor>();
     private CustomerState state;
     private float waitTimer;
     private bool wasSatisfied;
+
+    // El WaveManager lo llama justo después de instanciar al cliente
+    public void Init(Transform point, Transform exit, float patience, int maxItems)
+    {
+        customerPoint = point;
+        exitPoint = exit;
+        tiempoMaximoDeEspera = patience;
+        maxItemsPorPedido = Mathf.Max(1, maxItems);
+    }
 
     private void Start()
     {
@@ -94,9 +109,11 @@ public class CustomerTesting : MonoBehaviour, IInteractable
     private void OnArrivedAtCustomerPoint()
     {
         state = CustomerState.WaitingForOrder;
-        waitTimer = tiempoMaximoDeEspera;
 
-        Debug.Log("Cliente ha llegado. Pedido: esfera " + requestedColor);
+        // Más esferas en el pedido = más tiempo para completarlo
+        waitTimer = tiempoMaximoDeEspera + tiempoExtraPorItem * (pendingOrder.Count - 1);
+
+        Debug.Log("Cliente ha llegado. Pedido: " + string.Join(", ", pendingOrder));
     }
 
     private void OnArrivedAtExit()
@@ -107,10 +124,17 @@ public class CustomerTesting : MonoBehaviour, IInteractable
 
     private void GenerateOrder()
     {
-        int randomColor = UnityEngine.Random.Range(0, 3);
-        requestedColor = (SphereColor)randomColor;
+        pendingOrder.Clear();
 
-        Debug.Log("Nuevo cliente. Pedido: esfera " + requestedColor);
+        int itemCount = UnityEngine.Random.Range(1, maxItemsPorPedido + 1);
+        int colorCount = Enum.GetValues(typeof(SphereColor)).Length;
+
+        for (int i = 0; i < itemCount; i++)
+        {
+            pendingOrder.Add((SphereColor)UnityEngine.Random.Range(0, colorCount));
+        }
+
+        Debug.Log("Nuevo cliente. Pedido: " + string.Join(", ", pendingOrder));
     }
 
     private void LeaveAngry()
@@ -122,14 +146,15 @@ public class CustomerTesting : MonoBehaviour, IInteractable
 
     private void LeaveSatisfied()
     {
-        Debug.Log("¡Pedido correcto! Cliente recibió esfera " + requestedColor);
+        Debug.Log("¡Pedido completo! Cliente satisfecho.");
         wasSatisfied = true;
         state = CustomerState.Leaving;
     }
 
-    public SphereColor GetRequestedColor()
+    // Por si más adelante quieres mostrar el pedido en un ticket o sobre la cabeza del cliente
+    public IReadOnlyList<SphereColor> GetPendingColors()
     {
-        return requestedColor;
+        return pendingOrder;
     }
 
     public void Interact(PlayerInventory playerInventory)
@@ -155,11 +180,12 @@ public class CustomerTesting : MonoBehaviour, IInteractable
 
         SphereColor playerSphere = playerInventory.GetSphereColor();
 
-        if (playerSphere != requestedColor)
+        // Si el color no está en lo que falta del pedido, no pasa nada
+        if (!pendingOrder.Contains(playerSphere))
         {
             Debug.Log(
-                "Pedido incorrecto. El cliente quiere " +
-                requestedColor +
+                "Ese color no lo pidió. Le falta: " +
+                string.Join(", ", pendingOrder) +
                 " pero tienes " +
                 playerSphere
             );
@@ -167,7 +193,16 @@ public class CustomerTesting : MonoBehaviour, IInteractable
         }
 
         playerInventory.RemoveSphere();
-        LeaveSatisfied();
+        pendingOrder.Remove(playerSphere); // quita solo una esfera de ese color
+
+        if (pendingOrder.Count == 0)
+        {
+            LeaveSatisfied();
+        }
+        else
+        {
+            Debug.Log("Esfera entregada. Aún falta: " + string.Join(", ", pendingOrder));
+        }
     }
 
     public string GetInteractionText()
@@ -179,7 +214,7 @@ public class CustomerTesting : MonoBehaviour, IInteractable
             case CustomerState.Leaving:
                 return wasSatisfied ? "Cliente satisfecho" : "Cliente molesto";
             default:
-                return "Entregar esfera " + requestedColor;
+                return "Entregar esfera (falta: " + string.Join(", ", pendingOrder) + ")";
         }
     }
 }
