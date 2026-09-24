@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerInventory : MonoBehaviour
@@ -9,28 +10,23 @@ public class PlayerInventory : MonoBehaviour
     [SerializeField] private GameObject blueSpherePrefab;
     [SerializeField] private GameObject greenSpherePrefab;
 
-    private SphereColor? currentSphere;
-    private GameObject currentSphereObject;
+    private List<SphereColor> currentSpheres = new List<SphereColor>();
+
+    private List<GameObject> currentSphereObjects = new List<GameObject>();
 
     public bool HasSphere()
     {
-        return currentSphere.HasValue;
+        return currentSpheres.Count > 0;
     }
 
-    public SphereColor GetSphereColor()
+    public List<SphereColor> GetSpheres()
     {
-        return currentSphere.Value;
+        return currentSpheres;
     }
 
     public bool TryAddSphere(SphereColor color)
     {
-        if (HasSphere())
-        {
-            Debug.Log("Ya tienes una esfera.");
-            return false;
-        }
-
-        currentSphere = color;
+        currentSpheres.Add(color);
 
         CreateSphereVisual(color);
 
@@ -39,16 +35,16 @@ public class PlayerInventory : MonoBehaviour
         return true;
     }
 
-    public void RemoveSphere()
+    public void RemoveAllSpheres()
     {
-        if (!HasSphere())
+        if (currentSpheres.Count == 0)
             return;
 
-        Debug.Log("Has entregado la esfera " + currentSphere.Value);
+        currentSpheres.Clear();
 
-        currentSphere = null;
+        DestroySphereVisuals();
 
-        DestroySphereVisual();
+        Debug.Log("Has entregado todas las esferas.");
     }
 
     private void CreateSphereVisual(SphereColor color)
@@ -61,24 +57,30 @@ public class PlayerInventory : MonoBehaviour
             return;
         }
 
-        currentSphereObject = Instantiate(
+        GameObject sphereObject = Instantiate(
             prefab,
-            sphereHolder.position,
-            sphereHolder.rotation,
             sphereHolder
         );
 
-        currentSphereObject.transform.localPosition = Vector3.zero;
-        currentSphereObject.transform.localRotation = Quaternion.identity;
+        sphereObject.transform.localPosition =
+            Vector3.right * currentSphereObjects.Count * 0.5f;
+
+        sphereObject.transform.localRotation = Quaternion.identity;
+
+        currentSphereObjects.Add(sphereObject);
     }
 
-    private void DestroySphereVisual()
+    private void DestroySphereVisuals()
     {
-        if (currentSphereObject != null)
+        foreach (GameObject sphereObject in currentSphereObjects)
         {
-            Destroy(currentSphereObject);
-            currentSphereObject = null;
+            if (sphereObject != null)
+            {
+                Destroy(sphereObject);
+            }
         }
+
+        currentSphereObjects.Clear();
     }
 
     private GameObject GetSpherePrefab(SphereColor color)

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class Customer : MonoBehaviour, IInteractable
@@ -8,7 +9,14 @@ public class Customer : MonoBehaviour, IInteractable
     [Header("Customer Point")]
     [SerializeField] private Transform customerPoint;
 
-    private SphereColor requestedColor;
+    [SerializeField] private Transform customerExitPoint;
+
+    [Header("Order")]
+    [SerializeField] private int ingredientsPerOrder = 2;
+    [SerializeField] private CustomerOrderDisplay orderDisplay;
+
+    private List<SphereColor> requestedColors = new List<SphereColor>();
+
     private bool hasArrived = false;
     private bool isLeaving = false;
 
@@ -22,6 +30,10 @@ public class Customer : MonoBehaviour, IInteractable
         if (!hasArrived)
         {
             MoveToCustomerPoint();
+        }
+        else if (isLeaving)
+        {
+            MoveToExit();
         }
     }
 
@@ -58,25 +70,71 @@ public class Customer : MonoBehaviour, IInteractable
             hasArrived = true;
 
             Debug.Log(
-                "Cliente ha llegado. Pedido: esfera " + requestedColor
+                "Cliente ha llegado. Pedido: " + GetOrderText()
             );
+        }
+    }
+
+    private void MoveToExit()
+    {
+        if (customerExitPoint == null)
+            return;
+
+        Vector3 targetPosition = customerExitPoint.position;
+
+        targetPosition.y = transform.position.y;
+
+        transform.position = Vector3.MoveTowards(
+            transform.position,
+            targetPosition,
+            moveSpeed * Time.deltaTime
+        );
+
+        Vector3 direction = targetPosition - transform.position;
+
+        if (direction.sqrMagnitude > 0.01f)
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(direction);
+
+            transform.rotation = Quaternion.Slerp(
+                transform.rotation,
+                targetRotation,
+                10f * Time.deltaTime
+            );
+        }
+
+        if (Vector3.Distance(transform.position, targetPosition) < 0.05f)
+        {
+            Destroy(gameObject);
         }
     }
 
     private void GenerateOrder()
     {
-        int randomColor = Random.Range(0, 3);
+        requestedColors.Clear();
 
-        requestedColor = (SphereColor)randomColor;
+        for (int i = 0; i < ingredientsPerOrder; i++)
+        {
+            int randomColor = Random.Range(0, 3);
+
+            SphereColor color = (SphereColor)randomColor;
+
+            requestedColors.Add(color);
+        }
 
         Debug.Log(
-            "Nuevo cliente. Pedido: esfera " + requestedColor
+            "Nuevo cliente. Pedido: " + GetOrderText()
         );
+
+        if (orderDisplay != null)
+        {
+            orderDisplay.ShowOrder(requestedColors);
+        }
     }
 
-    public SphereColor GetRequestedColor()
+    public List<SphereColor> GetRequestedColors()
     {
-        return requestedColor;
+        return requestedColors;
     }
 
     public void Interact(PlayerInventory playerInventory)
@@ -100,32 +158,69 @@ public class Customer : MonoBehaviour, IInteractable
 
         if (!playerInventory.HasSphere())
         {
-            Debug.Log("No tienes ninguna esfera para entregar.");
+            Debug.Log("No tienes ingredientes para entregar.");
             return;
         }
 
-        SphereColor playerSphere = playerInventory.GetSphereColor();
+        List<SphereColor> playerSpheres = playerInventory.GetSpheres();
 
-        if (playerSphere != requestedColor)
+        if (!IsOrderCorrect(playerSpheres))
         {
             Debug.Log(
-                "Pedido incorrecto. El cliente quiere " +
-                requestedColor +
-                " pero tienes " +
-                playerSphere
+                "Pedido incorrecto. El cliente pidió: " +
+                GetOrderText()
             );
 
             return;
         }
 
         Debug.Log(
-            "¡Pedido correcto! Cliente recibió esfera " +
-            requestedColor
+            "¡Pedido correcto! El cliente recibió: " +
+            GetOrderText()
         );
 
-        playerInventory.RemoveSphere();
+        playerInventory.RemoveAllSpheres();
 
         isLeaving = true;
+    }
+
+    private bool IsOrderCorrect(List<SphereColor> playerSpheres)
+    {
+        if (playerSpheres.Count != requestedColors.Count)
+            return false;
+
+        List<SphereColor> playerCopy =
+            new List<SphereColor>(playerSpheres);
+
+        List<SphereColor> orderCopy =
+            new List<SphereColor>(requestedColors);
+
+        foreach (SphereColor color in orderCopy)
+        {
+            if (!playerCopy.Contains(color))
+                return false;
+
+            playerCopy.Remove(color);
+        }
+
+        return playerCopy.Count == 0;
+    }
+
+    private string GetOrderText()
+    {
+        string orderText = "";
+
+        for (int i = 0; i < requestedColors.Count; i++)
+        {
+            orderText += requestedColors[i];
+
+            if (i < requestedColors.Count - 1)
+            {
+                orderText += " + ";
+            }
+        }
+
+        return orderText;
     }
 
     public string GetInteractionText()
@@ -136,6 +231,6 @@ public class Customer : MonoBehaviour, IInteractable
         if (isLeaving)
             return "Cliente satisfecho";
 
-        return "Entregar esfera " + requestedColor;
+        return "Entregar bebida";
     }
 }

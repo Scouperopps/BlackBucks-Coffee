@@ -1,4 +1,4 @@
-using System;
+/*using System;
 using UnityEngine;
 
 public class CustomerTesting : MonoBehaviour, IInteractable
@@ -182,4 +182,4 @@ public class CustomerTesting : MonoBehaviour, IInteractable
                 return "Entregar esfera " + requestedColor;
         }
     }
-}
+}*/
