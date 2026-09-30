@@ -11,65 +11,44 @@ public class CustomerTesting : MonoBehaviour, IInteractable
         Leaving
     }
 
-    [Header("Movement")]
-    [SerializeField] private float moveSpeed = 2f;
+    [SerializeField] private float _moveSpeed = 2f;
+    [SerializeField] private Transform _customerPoint;
+    [SerializeField] private Transform _exitPoint;
 
-    [Header("Customer Point")]
-    [SerializeField] private Transform customerPoint;
+    private readonly List<SphereColor> _pendingOrder = new List<SphereColor>();
+    private CustomerState _state;
+    private bool _wasSatisfied;
+    private float _patience;
 
-    [Header("Exit Point")]
-    [SerializeField] private Transform exitPoint; // hacia dónde camina al irse
-
-    [Header("Paciencia")]
-    [SerializeField] private float tiempoMaximoDeEspera = 15f; // segundos esperando ser atendido
-    [SerializeField] private float tiempoExtraPorItem = 5f;    // segundos extra por cada esfera adicional del pedido
-
-    [Header("Pedido")]
-    [SerializeField, Min(1)] private int maxItemsPorPedido = 1; // el pedido tendrá entre 1 y este número de esferas
-
-    // Evento opcional para que un manager reaccione (puntaje, spawn del siguiente cliente, etc.)
-    // bool satisfecho = true si se le entregó el pedido completo, false si se fue por impaciencia
     public event Action<CustomerTesting, bool> OnCustomerLeft;
+    public event Action<CustomerTesting> OnOrderCompleted;
 
-    // Esferas que todavía faltan por entregarle
-    private readonly List<SphereColor> pendingOrder = new List<SphereColor>();
-    private CustomerState state;
-    private float waitTimer;
-    private bool wasSatisfied;
+    public CustomerState State => _state;
+    public IReadOnlyList<SphereColor> PendingOrder => _pendingOrder;
 
-    // El WaveManager lo llama justo después de instanciar al cliente
-    public void Init(Transform point, Transform exit, float patience, int maxItems)
+    public void Init(Transform customerPoint, Transform exitPoint, float patience, int maxItems)
     {
-        customerPoint = point;
-        exitPoint = exit;
-        tiempoMaximoDeEspera = patience;
-        maxItemsPorPedido = Mathf.Max(1, maxItems);
+        _customerPoint = customerPoint;
+        _exitPoint = exitPoint;
+        _patience = patience;
+        GenerateOrder(maxItems);
     }
 
     private void Start()
     {
-        GenerateOrder();
-        state = CustomerState.MovingToPoint;
+        _state = CustomerState.MovingToPoint;
     }
 
     private void Update()
     {
-        switch (state)
+        switch (_state)
         {
             case CustomerState.MovingToPoint:
-                MoveTowardsTarget(customerPoint, OnArrivedAtCustomerPoint);
-                break;
-
-            case CustomerState.WaitingForOrder:
-                waitTimer -= Time.deltaTime;
-                if (waitTimer <= 0f)
-                {
-                    LeaveAngry();
-                }
+                MoveTowardsTarget(_customerPoint, OnArrivedAtCustomerPoint);
                 break;
 
             case CustomerState.Leaving:
-                MoveTowardsTarget(exitPoint, OnArrivedAtExit);
+                MoveTowardsTarget(_exitPoint, OnArrivedAtExit);
                 break;
         }
     }
@@ -85,7 +64,7 @@ public class CustomerTesting : MonoBehaviour, IInteractable
         transform.position = Vector3.MoveTowards(
             transform.position,
             targetPosition,
-            moveSpeed * Time.deltaTime
+            _moveSpeed * Time.deltaTime
         );
 
         Vector3 direction = targetPosition - transform.position;
@@ -108,113 +87,68 @@ public class CustomerTesting : MonoBehaviour, IInteractable
 
     private void OnArrivedAtCustomerPoint()
     {
-        state = CustomerState.WaitingForOrder;
-
-        // Más esferas en el pedido = más tiempo para completarlo
-        waitTimer = tiempoMaximoDeEspera + tiempoExtraPorItem * (pendingOrder.Count - 1);
-
-        Debug.Log("Cliente ha llegado. Pedido: " + string.Join(", ", pendingOrder));
+        _state = CustomerState.WaitingForOrder;
+        CustomerManager.Instance.RegisterWaitingCustomer(this, _patience);
     }
 
     private void OnArrivedAtExit()
     {
-        OnCustomerLeft?.Invoke(this, wasSatisfied);
+        OnCustomerLeft?.Invoke(this, _wasSatisfied);
         Destroy(gameObject);
     }
 
-    private void GenerateOrder()
+    private void GenerateOrder(int maxItems)
     {
-        pendingOrder.Clear();
+        _pendingOrder.Clear();
 
-        int itemCount = UnityEngine.Random.Range(1, maxItemsPorPedido + 1);
+        int itemCount = UnityEngine.Random.Range(1, Mathf.Max(1, maxItems) + 1);
         int colorCount = Enum.GetValues(typeof(SphereColor)).Length;
 
         for (int i = 0; i < itemCount; i++)
         {
-            pendingOrder.Add((SphereColor)UnityEngine.Random.Range(0, colorCount));
+            _pendingOrder.Add((SphereColor)UnityEngine.Random.Range(0, colorCount));
         }
-
-        Debug.Log("Nuevo cliente. Pedido: " + string.Join(", ", pendingOrder));
     }
 
-    private void LeaveAngry()
+    public void Leave(bool satisfied)
     {
-        Debug.Log("Cliente se cansó de esperar y se va molesto.");
-        wasSatisfied = false;
-        state = CustomerState.Leaving;
-    }
-
-    private void LeaveSatisfied()
-    {
-        Debug.Log("¡Pedido completo! Cliente satisfecho.");
-        wasSatisfied = true;
-        state = CustomerState.Leaving;
-    }
-
-    // Por si más adelante quieres mostrar el pedido en un ticket o sobre la cabeza del cliente
-    public IReadOnlyList<SphereColor> GetPendingColors()
-    {
-        return pendingOrder;
+        _wasSatisfied = satisfied;
+        _state = CustomerState.Leaving;
     }
 
     public void Interact(PlayerInventory playerInventory)
     {
-        if (state != CustomerState.WaitingForOrder)
-        {
-            if (state == CustomerState.MovingToPoint)
-                Debug.Log("El cliente todavía está llegando.");
+        if (_state != CustomerState.WaitingForOrder)
             return;
-        }
 
-        if (playerInventory == null)
-        {
-            Debug.LogError("No se encontró PlayerInventory.");
+        if (playerInventory == null || !playerInventory.HasSphere())
             return;
-        }
-
-        if (!playerInventory.HasSphere())
-        {
-            Debug.Log("No tienes ninguna esfera para entregar.");
-            return;
-        }
 
         SphereColor playerSphere = playerInventory.GetSphereColor();
 
-        // Si el color no está en lo que falta del pedido, no pasa nada
-        if (!pendingOrder.Contains(playerSphere))
-        {
-            Debug.Log(
-                "Ese color no lo pidió. Le falta: " +
-                string.Join(", ", pendingOrder) +
-                " pero tienes " +
-                playerSphere
-            );
+        if (!_pendingOrder.Contains(playerSphere))
             return;
-        }
 
         playerInventory.RemoveSphere();
-        pendingOrder.Remove(playerSphere); // quita solo una esfera de ese color
+        _pendingOrder.Remove(playerSphere);
 
-        if (pendingOrder.Count == 0)
+        if (_pendingOrder.Count == 0)
         {
-            LeaveSatisfied();
-        }
-        else
-        {
-            Debug.Log("Esfera entregada. Aún falta: " + string.Join(", ", pendingOrder));
+            OnOrderCompleted?.Invoke(this);
+            Leave(true);
         }
     }
 
     public string GetInteractionText()
     {
-        switch (state)
+        switch (_state)
         {
             case CustomerState.MovingToPoint:
-                return "Cliente llegando";
+                return "Customer arriving";
             case CustomerState.Leaving:
-                return wasSatisfied ? "Cliente satisfecho" : "Cliente molesto";
+                return _wasSatisfied ? "Customer satisfied" : "Customer angry";
             default:
-                return "Entregar esfera (falta: " + string.Join(", ", pendingOrder) + ")";
+                return "Deliver sphere (missing: " + string.Join(", ", _pendingOrder) + ")";
         }
     }
 }
