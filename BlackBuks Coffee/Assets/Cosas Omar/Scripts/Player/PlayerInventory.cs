@@ -1,83 +1,79 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerInventory : MonoBehaviour
 {
-    [Header("Visual")]
-    [SerializeField] private Transform sphereHolder;
+    [Header("Capacidad e Inventario")]
+    [SerializeField] private int maxCapacity = 3;
+    [SerializeField] private float stackOffset = 0.4f; 
 
+    [Header("Visuales")]
+    [SerializeField] private Transform sphereHolder;
     [SerializeField] private GameObject redSpherePrefab;
     [SerializeField] private GameObject blueSpherePrefab;
     [SerializeField] private GameObject greenSpherePrefab;
 
-    private SphereColor? currentSphere;
-    private GameObject currentSphereObject;
+    private readonly List<SphereColor> carriedSpheres = new List<SphereColor>();
+    private readonly List<GameObject> spawnedVisuals = new List<GameObject>();
 
-    public bool HasSphere()
-    {
-        return currentSphere.HasValue;
-    }
-
-    public SphereColor GetSphereColor()
-    {
-        return currentSphere.Value;
-    }
+    public bool HasSphere() => carriedSpheres.Count > 0;
+    public bool IsFull() => carriedSpheres.Count >= maxCapacity;
+    public IReadOnlyList<SphereColor> CarriedSpheres => carriedSpheres;
 
     public bool TryAddSphere(SphereColor color)
     {
-        if (HasSphere())
+        if (IsFull())
         {
-            Debug.Log("Ya tienes una esfera.");
+            Debug.Log("Inventario lleno. No puedes llevar más esferas.");
             return false;
         }
 
-        currentSphere = color;
-
+        carriedSpheres.Add(color);
         CreateSphereVisual(color);
-
-        Debug.Log("Has recogido una esfera " + color);
-
+        Debug.Log($"Has recogido una esfera {color}. Llevas ({carriedSpheres.Count}/{maxCapacity})");
         return true;
     }
 
-    public void RemoveSphere()
+    public bool TryRemoveSphere(SphereColor color)
     {
-        if (!HasSphere())
-            return;
+        int index = carriedSpheres.IndexOf(color);
+        if (index < 0) return false;
 
-        Debug.Log("Has entregado la esfera " + currentSphere.Value);
-
-        currentSphere = null;
-
-        DestroySphereVisual();
+        carriedSpheres.RemoveAt(index);
+        DestroySphereVisualAt(index);
+        RealignVisuals();
+        Debug.Log($"Has entregado la esfera {color}");
+        return true;
     }
 
     private void CreateSphereVisual(SphereColor color)
     {
         GameObject prefab = GetSpherePrefab(color);
+        if (prefab == null || sphereHolder == null) return;
 
-        if (prefab == null)
-        {
-            Debug.LogError("No hay un prefab asignado para " + color);
-            return;
-        }
-
-        currentSphereObject = Instantiate(
-            prefab,
-            sphereHolder.position,
-            sphereHolder.rotation,
-            sphereHolder
-        );
-
-        currentSphereObject.transform.localPosition = Vector3.zero;
-        currentSphereObject.transform.localRotation = Quaternion.identity;
+        GameObject visual = Instantiate(prefab, sphereHolder);
+        visual.transform.localPosition = Vector3.up * (spawnedVisuals.Count * stackOffset);
+        visual.transform.localRotation = Quaternion.identity;
+        spawnedVisuals.Add(visual);
     }
 
-    private void DestroySphereVisual()
+    private void DestroySphereVisualAt(int index)
     {
-        if (currentSphereObject != null)
+        if (index >= 0 && index < spawnedVisuals.Count)
         {
-            Destroy(currentSphereObject);
-            currentSphereObject = null;
+            Destroy(spawnedVisuals[index]);
+            spawnedVisuals.RemoveAt(index);
+        }
+    }
+
+    private void RealignVisuals()
+    {
+        for (int i = 0; i < spawnedVisuals.Count; i++)
+        {
+            if (spawnedVisuals[i] != null)
+            {
+                spawnedVisuals[i].transform.localPosition = Vector3.up * (i * stackOffset);
+            }
         }
     }
 
@@ -85,17 +81,10 @@ public class PlayerInventory : MonoBehaviour
     {
         switch (color)
         {
-            case SphereColor.Red:
-                return redSpherePrefab;
-
-            case SphereColor.Blue:
-                return blueSpherePrefab;
-
-            case SphereColor.Green:
-                return greenSpherePrefab;
-
-            default:
-                return null;
+            case SphereColor.Red: return redSpherePrefab;
+            case SphereColor.Blue: return blueSpherePrefab;
+            case SphereColor.Green: return greenSpherePrefab;
+            default: return null;
         }
     }
 }

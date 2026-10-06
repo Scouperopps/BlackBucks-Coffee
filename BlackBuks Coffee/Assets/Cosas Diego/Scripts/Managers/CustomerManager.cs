@@ -18,11 +18,18 @@ public class CustomerManager : MonoBehaviour
         public float initialTime;
     }
 
+    [Header("Configuración de Fila")]
+    [SerializeField] private Transform customerPoint;                          // Punto donde atiende el primer cliente
+    [SerializeField] private Vector3 lineDirection = new Vector3(0, 0, -1);   // Dirección hacia donde se forma la fila
+    [SerializeField] private float spacing = 1.5f;                            // Distancia entre cada cliente en la fila
+
+    [Header("Paciencia")]
     [SerializeField] private float _extraTimePerItem = 5f;
     [SerializeField] private float _impatientThreshold = 0.5f;
     [SerializeField] private float _angryThreshold = 0.2f;
 
     private readonly List<TrackedCustomer> _trackedCustomers = new List<TrackedCustomer>();
+    private readonly List<CustomerTesting> _queue = new List<CustomerTesting>();
 
     public static CustomerManager Instance { get; private set; }
 
@@ -33,8 +40,35 @@ public class CustomerManager : MonoBehaviour
         Instance = this;
     }
 
+    // Registra al cliente en la fila tan pronto como nace
+    public void AddToQueue(CustomerTesting customer)
+    {
+        if (!_queue.Contains(customer))
+        {
+            _queue.Add(customer);
+            UpdateQueuePositions();
+        }
+    }
+
+    private void UpdateQueuePositions()
+    {
+        Vector3 basePos = customerPoint != null ? customerPoint.position : Vector3.zero;
+
+        for (int i = 0; i < _queue.Count; i++)
+        {
+            // Posición = Punto base + (Dirección * Índice * Distancia)
+            Vector3 targetPos = basePos + (lineDirection.normalized * (i * spacing));
+            _queue[i].SetTargetQueuePosition(targetPos);
+        }
+    }
+
     public void RegisterWaitingCustomer(CustomerTesting customer, float basePatience)
     {
+        foreach (var tracked in _trackedCustomers)
+        {
+            if (tracked.customer == customer) return;
+        }
+
         int extraItems = Mathf.Max(0, customer.PendingOrder.Count - 1);
         float totalPatience = basePatience + _extraTimePerItem * extraItems;
 
@@ -98,6 +132,11 @@ public class CustomerManager : MonoBehaviour
     {
         customer.OnOrderCompleted -= HandleOrderCompleted;
         customer.OnCustomerLeft -= HandleCustomerLeft;
+
+        if (_queue.Remove(customer))
+        {
+            UpdateQueuePositions(); // La fila avanza un puesto para todos los clientes restantes
+        }
 
         for (int i = 0; i < _trackedCustomers.Count; i++)
         {

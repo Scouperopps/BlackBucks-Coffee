@@ -12,9 +12,9 @@ public class CustomerTesting : MonoBehaviour, IInteractable
     }
 
     [SerializeField] private float _moveSpeed = 2f;
-    [SerializeField] private Transform _customerPoint;
     [SerializeField] private Transform _exitPoint;
 
+    private Vector3 _targetPosition;
     private readonly List<SphereColor> _pendingOrder = new List<SphereColor>();
     private CustomerState _state;
     private bool _wasSatisfied;
@@ -28,10 +28,20 @@ public class CustomerTesting : MonoBehaviour, IInteractable
 
     public void Init(Transform customerPoint, Transform exitPoint, float patience, int maxItems)
     {
-        _customerPoint = customerPoint;
+        _targetPosition = customerPoint != null ? customerPoint.position : transform.position;
         _exitPoint = exitPoint;
         _patience = patience;
         GenerateOrder(maxItems);
+    }
+
+    // Permite que la fila le asigne un lugar específico
+    public void SetTargetQueuePosition(Vector3 queuePosition)
+    {
+        _targetPosition = queuePosition;
+        if (_state != CustomerState.Leaving)
+        {
+            _state = CustomerState.MovingToPoint; // Hace que camine hacia su nuevo lugar en la fila
+        }
     }
 
     private void Start()
@@ -44,21 +54,18 @@ public class CustomerTesting : MonoBehaviour, IInteractable
         switch (_state)
         {
             case CustomerState.MovingToPoint:
-                MoveTowardsTarget(_customerPoint, OnArrivedAtCustomerPoint);
+                MoveTowardsTarget(_targetPosition, OnArrivedAtQueuePoint);
                 break;
 
             case CustomerState.Leaving:
-                MoveTowardsTarget(_exitPoint, OnArrivedAtExit);
+                if (_exitPoint != null)
+                    MoveTowardsTarget(_exitPoint.position, OnArrivedAtExit);
                 break;
         }
     }
 
-    private void MoveTowardsTarget(Transform target, Action onArrived)
+    private void MoveTowardsTarget(Vector3 targetPosition, Action onArrived)
     {
-        if (target == null)
-            return;
-
-        Vector3 targetPosition = target.position;
         targetPosition.y = transform.position.y;
 
         transform.position = Vector3.MoveTowards(
@@ -85,7 +92,7 @@ public class CustomerTesting : MonoBehaviour, IInteractable
         }
     }
 
-    private void OnArrivedAtCustomerPoint()
+    private void OnArrivedAtQueuePoint()
     {
         _state = CustomerState.WaitingForOrder;
         CustomerManager.Instance.RegisterWaitingCustomer(this, _patience);
@@ -100,7 +107,6 @@ public class CustomerTesting : MonoBehaviour, IInteractable
     private void GenerateOrder(int maxItems)
     {
         _pendingOrder.Clear();
-
         int itemCount = UnityEngine.Random.Range(1, Mathf.Max(1, maxItems) + 1);
         int colorCount = Enum.GetValues(typeof(SphereColor)).Length;
 
@@ -124,13 +130,16 @@ public class CustomerTesting : MonoBehaviour, IInteractable
         if (playerInventory == null || !playerInventory.HasSphere())
             return;
 
-        SphereColor playerSphere = playerInventory.GetSphereColor();
+        for (int i = _pendingOrder.Count - 1; i >= 0; i--)
+        {
+            SphereColor requiredColor = _pendingOrder[i];
 
-        if (!_pendingOrder.Contains(playerSphere))
-            return;
-
-        playerInventory.RemoveSphere();
-        _pendingOrder.Remove(playerSphere);
+            if (playerInventory.TryRemoveSphere(requiredColor))
+            {
+                _pendingOrder.RemoveAt(i);
+                break; // Entrega 1 esfera por interacción
+            }
+        }
 
         if (_pendingOrder.Count == 0)
         {
@@ -144,11 +153,11 @@ public class CustomerTesting : MonoBehaviour, IInteractable
         switch (_state)
         {
             case CustomerState.MovingToPoint:
-                return "Customer arriving";
+                return "Cliente llegando";
             case CustomerState.Leaving:
-                return _wasSatisfied ? "Customer satisfied" : "Customer angry";
+                return _wasSatisfied ? "Cliente satisfecho" : "Cliente molesto";
             default:
-                return "Deliver sphere (missing: " + string.Join(", ", _pendingOrder) + ")";
+                return "Entregar esfera (Falta: " + string.Join(", ", _pendingOrder) + ")";
         }
     }
 }

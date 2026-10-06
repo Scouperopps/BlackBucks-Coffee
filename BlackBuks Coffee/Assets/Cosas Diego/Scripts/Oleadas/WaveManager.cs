@@ -107,6 +107,13 @@ public class WaveManager : MonoBehaviour
 
         CustomerTesting customer = Instantiate(customerPrefab, spawnPoint.position, spawnPoint.rotation);
         customer.Init(customerPoint, exitPoint, patience, maxItems);
+
+        // Agrega al cliente a la fila inmediatamente
+        if (CustomerManager.Instance != null)
+        {
+            CustomerManager.Instance.AddToQueue(customer);
+        }
+
         customer.OnCustomerLeft += HandleCustomerLeft;
         activeCustomers++;
     }
