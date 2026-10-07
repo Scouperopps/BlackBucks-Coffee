@@ -6,6 +6,7 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance { get; private set; }
 
     private GameState _currentState;
+    private GameState _previousState;
 
     public GameState CurrentState => _currentState;
     public bool IsPlaying => _currentState == GameState.Playing;
@@ -44,11 +45,16 @@ public class GameManager : MonoBehaviour
             {
                 ResumeGame();
             }
+            else if (_currentState == GameState.Settings)
+            {
+                CloseSettings();
+            }
         }
     }
 
     public void SetGameState(GameState newState)
     {
+        _previousState = _currentState;
         _currentState = newState;
         UIManager.Instance.DisplayPanelByState(_currentState);
     }
@@ -66,6 +72,16 @@ public class GameManager : MonoBehaviour
     public void ResumeGame()
     {
         SetGameState(GameState.Playing);
+    }
+
+    public void OpenSettings()
+    {
+        SetGameState(GameState.Settings);
+    }
+
+    public void CloseSettings()
+    {
+        SetGameState(_previousState == GameState.Settings ? GameState.MainMenu : _previousState);
     }
 
     public void TriggerVictory()
@@ -86,5 +102,14 @@ public class GameManager : MonoBehaviour
     public void ReturnToMainMenu()
     {
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+    public void QuitGame()
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
     }
 }
