@@ -16,7 +16,7 @@ public class ColorBox : MonoBehaviour, IInteractable
     {
         if (playerInventory == null)
         {
-            Debug.LogError("No se encontró PlayerInventory.");
+            Debug.LogError("No se encontrï¿½ PlayerInventory.");
             return;
         }
 
@@ -30,9 +30,9 @@ public class ColorBox : MonoBehaviour, IInteractable
 
     public string GetInteractionText()
     {
-        if (playerInventory != null && playerInventory.HasSphere())
+        if (playerInventory != null && playerInventory.IsFull())
         {
-            return "Ya tienes una esfera";
+            return "Inventario lleno";
         }
 
         return "Recoger esfera " + sphereColor;

@@ -1,4 +1,5 @@
-/*using System;
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class CustomerTesting : MonoBehaviour, IInteractable
@@ -10,67 +11,67 @@ public class CustomerTesting : MonoBehaviour, IInteractable
         Leaving
     }
 
-    [Header("Movement")]
-    [SerializeField] private float moveSpeed = 2f;
+    [SerializeField] private float _moveSpeed = 2f;
+    [SerializeField] private Transform _exitPoint;
 
-    [Header("Customer Point")]
-    [SerializeField] private Transform customerPoint;
+    private Vector3 _targetPosition;
+    private readonly List<SphereColor> _pendingOrder = new List<SphereColor>();
+    private CustomerState _state;
+    private bool _wasSatisfied;
+    private float _patience;
 
-    [Header("Exit Point")]
-    [SerializeField] private Transform exitPoint; // hacia dónde camina al irse
-
-    [Header("Paciencia")]
-    [SerializeField] private float tiempoMaximoDeEspera = 15f; // segundos esperando ser atendido
-
-    // Evento opcional para que un manager reaccione (puntaje, spawn del siguiente cliente, etc.)
-    // bool satisfecho = true si se le entregó el pedido correcto, false si se fue por impaciencia
     public event Action<CustomerTesting, bool> OnCustomerLeft;
+    public event Action<CustomerTesting> OnOrderCompleted;
 
-    private SphereColor requestedColor;
-    private CustomerState state;
-    private float waitTimer;
-    private bool wasSatisfied;
+    public CustomerState State => _state;
+    public IReadOnlyList<SphereColor> PendingOrder => _pendingOrder;
+
+    public void Init(Transform customerPoint, Transform exitPoint, float patience, int maxItems)
+    {
+        _targetPosition = customerPoint != null ? customerPoint.position : transform.position;
+        _exitPoint = exitPoint;
+        _patience = patience;
+        GenerateOrder(maxItems);
+    }
+
+    // Permite que la fila le asigne un lugar específico
+    public void SetTargetQueuePosition(Vector3 queuePosition)
+    {
+        _targetPosition = queuePosition;
+        if (_state != CustomerState.Leaving)
+        {
+            _state = CustomerState.MovingToPoint; // Hace que camine hacia su nuevo lugar en la fila
+        }
+    }
 
     private void Start()
     {
-        GenerateOrder();
-        state = CustomerState.MovingToPoint;
+        _state = CustomerState.MovingToPoint;
     }
 
     private void Update()
     {
-        switch (state)
+        switch (_state)
         {
             case CustomerState.MovingToPoint:
-                MoveTowardsTarget(customerPoint, OnArrivedAtCustomerPoint);
-                break;
-
-            case CustomerState.WaitingForOrder:
-                waitTimer -= Time.deltaTime;
-                if (waitTimer <= 0f)
-                {
-                    LeaveAngry();
-                }
+                MoveTowardsTarget(_targetPosition, OnArrivedAtQueuePoint);
                 break;
 
             case CustomerState.Leaving:
-                MoveTowardsTarget(exitPoint, OnArrivedAtExit);
+                if (_exitPoint != null)
+                    MoveTowardsTarget(_exitPoint.position, OnArrivedAtExit);
                 break;
         }
     }
 
-    private void MoveTowardsTarget(Transform target, Action onArrived)
+    private void MoveTowardsTarget(Vector3 targetPosition, Action onArrived)
     {
-        if (target == null)
-            return;
-
-        Vector3 targetPosition = target.position;
         targetPosition.y = transform.position.y;
 
         transform.position = Vector3.MoveTowards(
             transform.position,
             targetPosition,
-            moveSpeed * Time.deltaTime
+            _moveSpeed * Time.deltaTime
         );
 
         Vector3 direction = targetPosition - transform.position;
@@ -91,95 +92,72 @@ public class CustomerTesting : MonoBehaviour, IInteractable
         }
     }
 
-    private void OnArrivedAtCustomerPoint()
+    private void OnArrivedAtQueuePoint()
     {
-        state = CustomerState.WaitingForOrder;
-        waitTimer = tiempoMaximoDeEspera;
-
-        Debug.Log("Cliente ha llegado. Pedido: esfera " + requestedColor);
+        _state = CustomerState.WaitingForOrder;
+        CustomerManager.Instance.RegisterWaitingCustomer(this, _patience);
     }
 
     private void OnArrivedAtExit()
     {
-        OnCustomerLeft?.Invoke(this, wasSatisfied);
+        OnCustomerLeft?.Invoke(this, _wasSatisfied);
         Destroy(gameObject);
     }
 
-    private void GenerateOrder()
+    private void GenerateOrder(int maxItems)
     {
-        int randomColor = UnityEngine.Random.Range(0, 3);
-        requestedColor = (SphereColor)randomColor;
+        _pendingOrder.Clear();
+        int itemCount = UnityEngine.Random.Range(1, Mathf.Max(1, maxItems) + 1);
+        int colorCount = Enum.GetValues(typeof(SphereColor)).Length;
 
-        Debug.Log("Nuevo cliente. Pedido: esfera " + requestedColor);
+        for (int i = 0; i < itemCount; i++)
+        {
+            _pendingOrder.Add((SphereColor)UnityEngine.Random.Range(0, colorCount));
+        }
     }
 
-    private void LeaveAngry()
+    public void Leave(bool satisfied)
     {
-        Debug.Log("Cliente se cansó de esperar y se va molesto.");
-        wasSatisfied = false;
-        state = CustomerState.Leaving;
-    }
-
-    private void LeaveSatisfied()
-    {
-        Debug.Log("¡Pedido correcto! Cliente recibió esfera " + requestedColor);
-        wasSatisfied = true;
-        state = CustomerState.Leaving;
-    }
-
-    public SphereColor GetRequestedColor()
-    {
-        return requestedColor;
+        _wasSatisfied = satisfied;
+        _state = CustomerState.Leaving;
     }
 
     public void Interact(PlayerInventory playerInventory)
     {
-        if (state != CustomerState.WaitingForOrder)
-        {
-            if (state == CustomerState.MovingToPoint)
-                Debug.Log("El cliente todavía está llegando.");
+        if (_state != CustomerState.WaitingForOrder)
             return;
+
+        if (playerInventory == null || !playerInventory.HasSphere())
+            return;
+
+        for (int i = _pendingOrder.Count - 1; i >= 0; i--)
+        {
+            SphereColor requiredColor = _pendingOrder[i];
+
+            if (playerInventory.TryRemoveSphere(requiredColor))
+            {
+                _pendingOrder.RemoveAt(i);
+                break; // Entrega 1 esfera por interacción
+            }
         }
 
-        if (playerInventory == null)
+        if (_pendingOrder.Count == 0)
         {
-            Debug.LogError("No se encontró PlayerInventory.");
-            return;
+            OnOrderCompleted?.Invoke(this);
+            Leave(true);
         }
-
-        if (!playerInventory.HasSphere())
-        {
-            Debug.Log("No tienes ninguna esfera para entregar.");
-            return;
-        }
-
-        SphereColor playerSphere = playerInventory.GetSphereColor();
-
-        if (playerSphere != requestedColor)
-        {
-            Debug.Log(
-                "Pedido incorrecto. El cliente quiere " +
-                requestedColor +
-                " pero tienes " +
-                playerSphere
-            );
-            return;
-        }
-
-        playerInventory.RemoveSphere();
-        LeaveSatisfied();
     }
 
     public string GetInteractionText()
     {
-        switch (state)
+        switch (_state)
         {
             case CustomerState.MovingToPoint:
                 return "Cliente llegando";
             case CustomerState.Leaving:
-                return wasSatisfied ? "Cliente satisfecho" : "Cliente molesto";
+                return _wasSatisfied ? "Cliente satisfecho" : "Cliente molesto";
             default:
-                return "Entregar esfera " + requestedColor;
+                return "Entregar esfera (Falta: " + string.Join(", ", _pendingOrder) + ")";
         }
     }
 }*/
