@@ -24,3 +24,16 @@ BlackBuks Coffee/ProjectSettings/GraphicsSettings.asset
 BlackBuks Coffee/ProjectSettings/ProjectSettings.asset
 BlackBuks Coffee/ProjectSettings/ProjectVersion.txt
 BlackBuks Coffee/ProjectSettings/ShaderGraphSettings.asset
+BlackBuks Coffee/Assets/Settings/Mobile_RPAsset.asset
+BlackBuks Coffee/Assets/Settings/PC_RPAsset.asset
+BlackBuks Coffee/Assets/Settings/UniversalRenderPipelineGlobalSettings.asset
+BlackBuks Coffee/Assets/Settings/URP-Balanced.asset
+BlackBuks Coffee/Assets/Settings/URP-HighFidelity.asset
+BlackBuks Coffee/Assets/Settings/URP-Performant.asset
+BlackBuks Coffee/Packages/manifest.json
+BlackBuks Coffee/Packages/packages-lock.json
+BlackBuks Coffee/ProjectSettings/EditorBuildSettings.asset
+BlackBuks Coffee/ProjectSettings/GraphicsSettings.asset
+BlackBuks Coffee/ProjectSettings/ProjectSettings.asset
+BlackBuks Coffee/ProjectSettings/ProjectVersion.txt
+BlackBuks Coffee/ProjectSettings/ShaderGraphSettings.asset
