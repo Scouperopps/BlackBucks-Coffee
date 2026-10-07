@@ -31,6 +31,7 @@ public class WaveManager : MonoBehaviour
     [SerializeField] private Transform _spawnPoint;
     [SerializeField] private Transform _customerPoint;
     [SerializeField] private Transform _exitPoint;
+    [SerializeField] private int _maxAngryCustomersAllowed = 3;
 
     public List<LevelData> levels = new List<LevelData>();
     public float timeBetweenWaves = 3f;
@@ -38,7 +39,9 @@ public class WaveManager : MonoBehaviour
 
     private Coroutine _levelRoutine;
     private int _activeCustomers = 0;
+    private int _angryCustomerCount = 0;
     private bool _levelStarted = false;
+    private bool _allWavesSpawned = false;
 
     public int ActiveCustomers => _activeCustomers;
 
@@ -66,6 +69,8 @@ public class WaveManager : MonoBehaviour
         if (_levelRoutine != null)
             StopCoroutine(_levelRoutine);
 
+        _angryCustomerCount = 0;
+        _allWavesSpawned = false;
         _levelRoutine = StartCoroutine(RunLevel(levels[levelIndex]));
     }
 
@@ -78,7 +83,9 @@ public class WaveManager : MonoBehaviour
             yield return StartCoroutine(SpawnWave(level.waves[i], level.customerPatience, level.maxItemsPerOrder));
         }
 
+        _allWavesSpawned = true;
         OnAllWavesCompleted?.Invoke();
+        CheckVictoryCondition();
     }
 
     private IEnumerator SpawnWave(WaveData wave, float patience, int maxItems)
@@ -132,5 +139,25 @@ public class WaveManager : MonoBehaviour
         customer.OnCustomerLeft -= HandleCustomerLeft;
         _activeCustomers--;
         OnCustomerResolved?.Invoke(satisfied);
+
+        if (!satisfied)
+        {
+            _angryCustomerCount++;
+            if (_angryCustomerCount >= _maxAngryCustomersAllowed)
+            {
+                GameManager.Instance.TriggerDefeat();
+                return;
+            }
+        }
+
+        CheckVictoryCondition();
+    }
+
+    private void CheckVictoryCondition()
+    {
+        if (_allWavesSpawned && _activeCustomers == 0 && _angryCustomerCount < _maxAngryCustomersAllowed)
+        {
+            GameManager.Instance.TriggerVictory();
+        }
     }
 }
