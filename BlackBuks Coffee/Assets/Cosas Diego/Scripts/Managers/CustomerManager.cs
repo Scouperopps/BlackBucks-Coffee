@@ -87,6 +87,9 @@ public class CustomerManager : MonoBehaviour
 
     private void Update()
     {
+        if (GameManager.Instance == null || !GameManager.Instance.IsPlaying)
+        return;
+        
         for (int i = _trackedCustomers.Count - 1; i >= 0; i--)
         {
             TrackedCustomer entry = _trackedCustomers[i];

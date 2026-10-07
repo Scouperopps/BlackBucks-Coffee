@@ -51,6 +51,9 @@ public class CustomerTesting : MonoBehaviour, IInteractable
 
     private void Update()
     {
+        if (GameManager.Instance == null || !GameManager.Instance.IsPlaying)
+        return;
+        
         switch (_state)
         {
             case CustomerState.MovingToPoint:
