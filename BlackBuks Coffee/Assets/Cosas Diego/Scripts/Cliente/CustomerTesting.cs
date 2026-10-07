@@ -13,6 +13,7 @@ public class CustomerTesting : MonoBehaviour, IInteractable
 
     [SerializeField] private float _moveSpeed = 2f;
     [SerializeField] private Transform _exitPoint;
+    [SerializeField] private CustomerOrderDisplay _orderDisplay;
 
     private Vector3 _targetPosition;
     private readonly List<SphereColor> _pendingOrder = new List<SphereColor>();
@@ -34,13 +35,12 @@ public class CustomerTesting : MonoBehaviour, IInteractable
         GenerateOrder(maxItems);
     }
 
-    // Permite que la fila le asigne un lugar específico
     public void SetTargetQueuePosition(Vector3 queuePosition)
     {
         _targetPosition = queuePosition;
         if (_state != CustomerState.Leaving)
         {
-            _state = CustomerState.MovingToPoint; // Hace que camine hacia su nuevo lugar en la fila
+            _state = CustomerState.MovingToPoint;
         }
     }
 
@@ -52,8 +52,8 @@ public class CustomerTesting : MonoBehaviour, IInteractable
     private void Update()
     {
         if (GameManager.Instance == null || !GameManager.Instance.IsPlaying)
-        return;
-        
+            return;
+
         switch (_state)
         {
             case CustomerState.MovingToPoint:
@@ -117,6 +117,11 @@ public class CustomerTesting : MonoBehaviour, IInteractable
         {
             _pendingOrder.Add((SphereColor)UnityEngine.Random.Range(0, colorCount));
         }
+
+        if (_orderDisplay != null)
+        {
+            _orderDisplay.ShowOrder(_pendingOrder);
+        }
     }
 
     public void Leave(bool satisfied)
@@ -133,6 +138,8 @@ public class CustomerTesting : MonoBehaviour, IInteractable
         if (playerInventory == null || !playerInventory.HasSphere())
             return;
 
+        bool orderUpdated = false;
+
         for (int i = _pendingOrder.Count - 1; i >= 0; i--)
         {
             SphereColor requiredColor = _pendingOrder[i];
@@ -140,8 +147,14 @@ public class CustomerTesting : MonoBehaviour, IInteractable
             if (playerInventory.TryRemoveSphere(requiredColor))
             {
                 _pendingOrder.RemoveAt(i);
-                break; // Entrega 1 esfera por interacción
+                orderUpdated = true;
+                break;
             }
+        }
+
+        if (orderUpdated && _orderDisplay != null)
+        {
+            _orderDisplay.ShowOrder(_pendingOrder);
         }
 
         if (_pendingOrder.Count == 0)
@@ -156,11 +169,11 @@ public class CustomerTesting : MonoBehaviour, IInteractable
         switch (_state)
         {
             case CustomerState.MovingToPoint:
-                return "Cliente llegando";
+                return "Customer arriving";
             case CustomerState.Leaving:
-                return _wasSatisfied ? "Cliente satisfecho" : "Cliente molesto";
+                return _wasSatisfied ? "Satisfied customer" : "Angry customer";
             default:
-                return "Entregar esfera (Falta: " + string.Join(", ", _pendingOrder) + ")";
+                return "Deliver ingredient";
         }
     }
 }
