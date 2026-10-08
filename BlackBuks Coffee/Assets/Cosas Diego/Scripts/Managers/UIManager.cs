@@ -10,6 +10,7 @@ public class UIManager : MonoBehaviour
     public GameObject victoryPanel;
     public GameObject defeatPanel;
     public GameObject settingsPanel;
+    public GameObject tutorialPanel;
 
     private void Awake()
     {
@@ -47,6 +48,9 @@ public class UIManager : MonoBehaviour
             case GameState.Settings:
                 if (settingsPanel != null) settingsPanel.SetActive(true);
                 break;
+            case GameState.Tutorial:
+                if (tutorialPanel != null) tutorialPanel.SetActive(true);
+                break;
         }
     }
 
@@ -58,6 +62,7 @@ public class UIManager : MonoBehaviour
         if (victoryPanel != null) victoryPanel.SetActive(false);
         if (defeatPanel != null) defeatPanel.SetActive(false);
         if (settingsPanel != null) settingsPanel.SetActive(false);
+        if (tutorialPanel != null) tutorialPanel.SetActive(false);
     }
 
     public void ClickPlayButton()
@@ -88,6 +93,16 @@ public class UIManager : MonoBehaviour
     public void ClickBackFromSettingsButton()
     {
         GameManager.Instance.CloseSettings();
+    }
+
+    public void ClickTutorialButton()
+    {
+        GameManager.Instance.OpenTutorial();
+    }
+
+    public void ClickBackFromTutorialButton()
+    {
+        GameManager.Instance.CloseTutorial();
     }
 
     public void ClickQuitButton()

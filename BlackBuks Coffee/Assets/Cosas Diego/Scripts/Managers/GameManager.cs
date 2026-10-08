@@ -6,7 +6,7 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance { get; private set; }
 
     private GameState _currentState;
-    private GameState _previousState;
+    private GameState _originState = GameState.MainMenu; // Guarda si venimos de MainMenu o Paused
 
     public GameState CurrentState => _currentState;
     public bool IsPlaying => _currentState == GameState.Playing;
@@ -49,12 +49,15 @@ public class GameManager : MonoBehaviour
             {
                 CloseSettings();
             }
+            else if (_currentState == GameState.Tutorial)
+            {
+                CloseTutorial();
+            }
         }
     }
 
     public void SetGameState(GameState newState)
     {
-        _previousState = _currentState;
         _currentState = newState;
         UIManager.Instance.DisplayPanelByState(_currentState);
     }
@@ -76,12 +79,32 @@ public class GameManager : MonoBehaviour
 
     public void OpenSettings()
     {
+        // Solo guardamos el origen si venimos de las pantallas principales
+        if (_currentState == GameState.MainMenu || _currentState == GameState.Paused)
+        {
+            _originState = _currentState;
+        }
         SetGameState(GameState.Settings);
     }
 
     public void CloseSettings()
     {
-        SetGameState(_previousState == GameState.Settings ? GameState.MainMenu : _previousState);
+        SetGameState(_originState); // Regresa exactamente a MainMenu o Paused
+    }
+
+    public void OpenTutorial()
+    {
+        // Solo guardamos el origen si venimos de las pantallas principales
+        if (_currentState == GameState.MainMenu || _currentState == GameState.Paused)
+        {
+            _originState = _currentState;
+        }
+        SetGameState(GameState.Tutorial);
+    }
+
+    public void CloseTutorial()
+    {
+        SetGameState(_originState); // Regresa exactamente a MainMenu o Paused
     }
 
     public void TriggerVictory()

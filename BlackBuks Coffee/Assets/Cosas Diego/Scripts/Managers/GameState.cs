@@ -5,5 +5,6 @@ public enum GameState
     Paused,
     Victory,
     Defeat,
-    Settings
+    Settings,
+    Tutorial
 }
