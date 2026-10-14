@@ -118,8 +118,6 @@ public class PlayerInventory : MonoBehaviour
                 spawnedVisuals[i].transform.localPosition = Vector3.up * (i * stackOffset);
             }
         }
-
-        currentSphereObjects.Clear();
     }
 
     private GameObject GetSpherePrefab(SphereColor color)
