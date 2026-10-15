@@ -1,9 +1,11 @@
+using TMPro;
 using UnityEngine;
 
 public class UIManager : MonoBehaviour
 {
     public static UIManager Instance { get; private set; }
 
+    [Header("Panels")]
     public GameObject mainMenuPanel;
     public GameObject playingPanel;
     public GameObject pausePanel;
@@ -11,6 +13,9 @@ public class UIManager : MonoBehaviour
     public GameObject defeatPanel;
     public GameObject settingsPanel;
     public GameObject tutorialPanel;
+
+    [Header("Localization")]
+    [SerializeField] private TMP_Dropdown _languageDropdown;
 
     private void Awake()
     {
@@ -21,6 +26,36 @@ public class UIManager : MonoBehaviour
         else
         {
             Destroy(gameObject);
+        }
+    }
+
+    private void Start()
+    {
+        InitializeLanguageDropdown();
+    }
+
+    private void InitializeLanguageDropdown()
+    {
+        if (_languageDropdown == null || LocalizationManager.Instance == null)
+            return;
+
+        _languageDropdown.ClearOptions();
+
+        var options = new System.Collections.Generic.List<string>(System.Enum.GetNames(typeof(Language)));
+        _languageDropdown.AddOptions(options);
+
+        _languageDropdown.value = (int)LocalizationManager.Instance.CurrentLanguage;
+        _languageDropdown.RefreshShownValue();
+
+        _languageDropdown.onValueChanged.RemoveAllListeners();
+        _languageDropdown.onValueChanged.AddListener(OnLanguageDropdownChanged);
+    }
+
+    public void OnLanguageDropdownChanged(int index)
+    {
+        if (LocalizationManager.Instance != null)
+        {
+            LocalizationManager.Instance.SetLanguage((Language)index);
         }
     }
 
