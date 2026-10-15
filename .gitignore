@@ -44,3 +44,4 @@ BlackBuks Coffee/ProjectSettings/EditorBuildSettings.asset
 BlackBuks Coffee/ProjectSettings/GraphicsSettings.asset
 BlackBuks Coffee/ProjectSettings/ProjectSettings.asset
 BlackBuks Coffee/ProjectSettings/ShaderGraphSettings.asset
+*.json
