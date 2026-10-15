@@ -1,3 +1,4 @@
+
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -18,18 +19,27 @@ public class CustomerManager : MonoBehaviour
         public float initialTime;
     }
 
-    [Header("Configuración de Fila")]
-    [SerializeField] private Transform customerPoint;                          // Punto donde atiende el primer cliente
-    [SerializeField] private Vector3 lineDirection = new Vector3(0, 0, -1);   // Dirección hacia donde se forma la fila
-    [SerializeField] private float spacing = 1.5f;                            // Distancia entre cada cliente en la fila
+    [Header("Puntos de atención")]
+    [SerializeField] private Transform registerPoint;
+    [SerializeField] private Transform waitingPoint;
+    [SerializeField] private Vector3 registerLineDirection = new Vector3(0, 0, -1);
+    [SerializeField] private Vector3 waitingLineDirection = new Vector3(1, 0, 0);
+    [SerializeField] private float registerSpacing = 1.5f;
+    [SerializeField] private float waitingSpacing = 1.5f;
 
     [Header("Paciencia")]
     [SerializeField] private float _extraTimePerItem = 5f;
     [SerializeField] private float _impatientThreshold = 0.5f;
     [SerializeField] private float _angryThreshold = 0.2f;
 
-    private readonly List<TrackedCustomer> _trackedCustomers = new List<TrackedCustomer>();
-    private readonly List<CustomerTesting> _queue = new List<CustomerTesting>();
+    private readonly List<CustomerTesting> _registerQueue =
+        new List<CustomerTesting>();
+
+    private readonly List<CustomerTesting> _waitingCustomers =
+        new List<CustomerTesting>();
+
+    private readonly List<TrackedCustomer> _trackedCustomers =
+        new List<TrackedCustomer>();
 
     public static CustomerManager Instance { get; private set; }
 
@@ -37,62 +47,121 @@ public class CustomerManager : MonoBehaviour
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         Instance = this;
     }
 
-    // Registra al cliente en la fila tan pronto como nace
+    private void OnDestroy()
+    {
+        if (Instance == this)
+            Instance = null;
+    }
+
     public void AddToQueue(CustomerTesting customer)
     {
-        if (!_queue.Contains(customer))
-        {
-            _queue.Add(customer);
-            UpdateQueuePositions();
-        }
+        if (customer == null || _registerQueue.Contains(customer))
+            return;
+
+        _registerQueue.Add(customer);
+        UpdateRegisterQueuePositions();
     }
 
-    private void UpdateQueuePositions()
+    public bool CanServeAtRegister(CustomerTesting customer)
     {
-        Vector3 basePos = customerPoint != null ? customerPoint.position : Vector3.zero;
-
-        for (int i = 0; i < _queue.Count; i++)
-        {
-            // Posición = Punto base + (Dirección * Índice * Distancia)
-            Vector3 targetPos = basePos + (lineDirection.normalized * (i * spacing));
-            _queue[i].SetTargetQueuePosition(targetPos);
-        }
+        return _registerQueue.Count > 0
+            && _registerQueue[0] == customer;
     }
 
-    public void RegisterWaitingCustomer(CustomerTesting customer, float basePatience)
+    public void ServeAtRegister(CustomerTesting customer)
     {
-        foreach (var tracked in _trackedCustomers)
+        if (!CanServeAtRegister(customer))
+            return;
+
+        _registerQueue.RemoveAt(0);
+        UpdateRegisterQueuePositions();
+
+        if (!_waitingCustomers.Contains(customer))
+            _waitingCustomers.Add(customer);
+
+        UpdateWaitingPositions();
+    }
+
+    public void RegisterWaitingCustomer(
+        CustomerTesting customer,
+        float basePatience)
+    {
+        if (customer == null)
+            return;
+
+        foreach (TrackedCustomer tracked in _trackedCustomers)
         {
-            if (tracked.customer == customer) return;
+            if (tracked.customer == customer)
+                return;
         }
 
         int extraItems = Mathf.Max(0, customer.PendingOrder.Count - 1);
         float totalPatience = basePatience + _extraTimePerItem * extraItems;
 
-        TrackedCustomer entry = new TrackedCustomer
+        _trackedCustomers.Add(new TrackedCustomer
         {
             customer = customer,
             remainingTime = totalPatience,
-            initialTime = totalPatience
-        };
-
-        _trackedCustomers.Add(entry);
+            initialTime = Mathf.Max(0.01f, totalPatience)
+        });
 
         customer.OnOrderCompleted += HandleOrderCompleted;
         customer.OnCustomerLeft += HandleCustomerLeft;
     }
 
+    private void UpdateRegisterQueuePositions()
+    {
+        Vector3 basePosition = registerPoint != null
+            ? registerPoint.position
+            : Vector3.zero;
+
+        for (int i = 0; i < _registerQueue.Count; i++)
+        {
+            Vector3 targetPosition = basePosition
+                + registerLineDirection.normalized * (i * registerSpacing);
+
+            _registerQueue[i].SetTargetQueuePosition(targetPosition);
+        }
+    }
+
+    private void UpdateWaitingPositions()
+    {
+        Vector3 basePosition = waitingPoint != null
+            ? waitingPoint.position
+            : Vector3.zero;
+
+        for (int i = 0; i < _waitingCustomers.Count; i++)
+        {
+            Vector3 targetPosition = basePosition
+                + waitingLineDirection.normalized * (i * waitingSpacing);
+
+            _waitingCustomers[i].SetTargetWaitingPosition(targetPosition);
+        }
+    }
+
     private void Update()
     {
         if (GameManager.Instance == null || !GameManager.Instance.IsPlaying)
-        return;
-        
+            return;
+
         for (int i = _trackedCustomers.Count - 1; i >= 0; i--)
         {
             TrackedCustomer entry = _trackedCustomers[i];
+
+            if (entry.customer == null)
+            {
+                _trackedCustomers.RemoveAt(i);
+                continue;
+            }
 
             if (entry.customer.State != CustomerTesting.CustomerState.WaitingForOrder)
                 continue;
@@ -103,10 +172,7 @@ public class CustomerManager : MonoBehaviour
             OnCustomerMoodChanged?.Invoke(entry.customer, GetMood(ratio));
 
             if (entry.remainingTime <= 0f)
-            {
                 entry.customer.Leave(false);
-                RemoveTrackedCustomer(entry.customer);
-            }
         }
     }
 
@@ -133,21 +199,22 @@ public class CustomerManager : MonoBehaviour
 
     private void RemoveTrackedCustomer(CustomerTesting customer)
     {
+        if (customer == null)
+            return;
+
         customer.OnOrderCompleted -= HandleOrderCompleted;
         customer.OnCustomerLeft -= HandleCustomerLeft;
 
-        if (_queue.Remove(customer))
-        {
-            UpdateQueuePositions(); // La fila avanza un puesto para todos los clientes restantes
-        }
+        _registerQueue.Remove(customer);
+        _waitingCustomers.Remove(customer);
 
-        for (int i = 0; i < _trackedCustomers.Count; i++)
+        UpdateRegisterQueuePositions();
+        UpdateWaitingPositions();
+
+        for (int i = _trackedCustomers.Count - 1; i >= 0; i--)
         {
             if (_trackedCustomers[i].customer == customer)
-            {
                 _trackedCustomers.RemoveAt(i);
-                break;
-            }
         }
     }
 }
