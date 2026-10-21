@@ -1,3 +1,4 @@
+
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -14,25 +15,28 @@ public class CustomerTesting : MonoBehaviour, IInteractable
         Leaving
     }
 
+    [Header("Movimiento")]
     [SerializeField] private float _moveSpeed = 2f;
     [SerializeField] private Transform _exitPoint;
     [SerializeField] private CustomerOrderDisplay _orderDisplay;
+    [Header("Nombre del cliente")]
     [SerializeField]
     private string[] _customerNames =
-    {
-        "Daniel",
-        "Omar",
-        "Valentina",
-        "Carlos",
-        "Aime",
-        "Mateo",
-        "Michelle",
-        "Diego",
-        "Elena",
-        "Andres"
-    };
+{
+    "Daniel",
+    "Omar",
+    "Valentina",
+    "Carlos",
+    "Aime",
+    "Mateo",
+    "Michelle",
+    "Diego",
+    "Elena",
+    "Andres"
+};
 
     private string _customerName;
+
     public string CustomerName => _customerName;
 
     private Vector3 _targetPosition;
@@ -48,9 +52,6 @@ public class CustomerTesting : MonoBehaviour, IInteractable
     public CustomerState State => _state;
     public IReadOnlyList<SphereColor> PendingOrder => _pendingOrder;
 
-    private const float ROTATION_SPEED = 10f;
-    private const float ARRIVAL_DISTANCE_THRESHOLD = 0.05f;
-
     public void Init(
         Transform customerPoint,
         Transform exitPoint,
@@ -64,9 +65,7 @@ public class CustomerTesting : MonoBehaviour, IInteractable
         _exitPoint = exitPoint;
         _patience = patience;
 
-        _customerName = _customerNames.Length > 0
-            ? _customerNames[UnityEngine.Random.Range(0, _customerNames.Length)]
-            : "Customer";
+        _customerName = _customerNames.Length > 0? _customerNames[UnityEngine.Random.Range(0, _customerNames.Length)] : "Cliente";
 
         GenerateOrder(maxItems);
         _state = CustomerState.MovingToPoint;
@@ -86,44 +85,21 @@ public class CustomerTesting : MonoBehaviour, IInteractable
         _state = CustomerState.MovingToPoint;
     }
 
-    public void SetTargetWaitingPosition(Vector3 waitingPosition, float secondPhasePatience = 45f)
+    public void SetTargetWaitingPosition(Vector3 waitingPosition)
     {
         if (_state == CustomerState.Leaving)
-        {
             return;
-        }
 
         _targetPosition = waitingPosition;
-        _patience = secondPhasePatience;
         _state = CustomerState.MovingToWaitingPoint;
-    }
-
-    public void CallToOrderTable(Vector3 orderTablePosition)
-    {
-        if (_state != CustomerState.WaitingForOrder)
-        {
-            return;
-        }
-
-        _targetPosition = orderTablePosition;
-        _state = CustomerState.MovingToOrderTable;
     }
 
     private void Update()
     {
-        if (GameManager.Instance == null || !GameManager.Instance.IsPlaying)
+        if (GameManager.Instance == null ||
+            !GameManager.Instance.IsPlaying)
         {
             return;
-        }
-
-        if (_state == CustomerState.WaitingAtRegister || _state == CustomerState.WaitingForOrder)
-        {
-            _patience -= Time.deltaTime;
-            if (_patience <= 0f)
-            {
-                Leave(false);
-                return;
-            }
         }
 
         switch (_state)
@@ -137,19 +113,19 @@ public class CustomerTesting : MonoBehaviour, IInteractable
                 break;
 
             case CustomerState.MovingToOrderTable:
-                MoveTowardsTarget(_targetPosition, OnArrivedAtOrderTable);
+                // El movimiento hacia la mesa se conectará en el siguiente paso.
                 break;
 
             case CustomerState.Leaving:
                 if (_exitPoint != null)
-                {
                     MoveTowardsTarget(_exitPoint.position, OnArrivedAtExit);
-                }
                 break;
         }
     }
 
-    private void MoveTowardsTarget(Vector3 targetPosition, Action onArrivedAction)
+    private void MoveTowardsTarget(
+        Vector3 targetPosition,
+        Action onArrived)
     {
         targetPosition.y = transform.position.y;
 
@@ -159,22 +135,22 @@ public class CustomerTesting : MonoBehaviour, IInteractable
             _moveSpeed * Time.deltaTime
         );
 
-        Vector3 movementDirection = targetPosition - transform.position;
+        Vector3 direction = targetPosition - transform.position;
 
-        if (movementDirection.sqrMagnitude > 0.01f)
+        if (direction.sqrMagnitude > 0.01f)
         {
-            Quaternion targetRotation = Quaternion.LookRotation(movementDirection);
+            Quaternion targetRotation = Quaternion.LookRotation(direction);
 
             transform.rotation = Quaternion.Slerp(
                 transform.rotation,
                 targetRotation,
-                ROTATION_SPEED * Time.deltaTime
+                10f * Time.deltaTime
             );
         }
 
-        if (Vector3.Distance(transform.position, targetPosition) < ARRIVAL_DISTANCE_THRESHOLD)
+        if (Vector3.Distance(transform.position, targetPosition) < 0.05f)
         {
-            onArrivedAction?.Invoke();
+            onArrived?.Invoke();
         }
     }
 
@@ -194,12 +170,6 @@ public class CustomerTesting : MonoBehaviour, IInteractable
                 _patience
             );
         }
-    }
-
-    private void OnArrivedAtOrderTable()
-    {
-        OnOrderCompleted?.Invoke(this);
-        Leave(true);
     }
 
     private void OnArrivedAtExit()
@@ -232,9 +202,9 @@ public class CustomerTesting : MonoBehaviour, IInteractable
         }
     }
 
-    public void Leave(bool isSatisfied)
+    public void Leave(bool satisfied)
     {
-        _wasSatisfied = isSatisfied;
+        _wasSatisfied = satisfied;
         _state = CustomerState.Leaving;
     }
 
@@ -243,14 +213,10 @@ public class CustomerTesting : MonoBehaviour, IInteractable
         if (_state == CustomerState.WaitingAtRegister)
         {
             if (CustomerManager.Instance == null)
-            {
                 return;
-            }
 
             if (!CustomerManager.Instance.CanServeAtRegister(this))
-            {
                 return;
-            }
 
             if (_orderDisplay != null)
             {
@@ -261,17 +227,15 @@ public class CustomerTesting : MonoBehaviour, IInteractable
             return;
         }
 
+        // La entrega directa se conserva temporalmente.
+        // Se reemplazará por la mesa C en el siguiente paso.
         if (_state != CustomerState.WaitingForOrder)
-        {
             return;
-        }
 
         if (playerInventory == null || !playerInventory.HasSphere())
-        {
             return;
-        }
 
-        bool isOrderUpdated = false;
+        bool orderUpdated = false;
 
         for (int i = _pendingOrder.Count - 1; i >= 0; i--)
         {
@@ -280,12 +244,12 @@ public class CustomerTesting : MonoBehaviour, IInteractable
             if (playerInventory.TryRemoveSphere(requiredColor))
             {
                 _pendingOrder.RemoveAt(i);
-                isOrderUpdated = true;
+                orderUpdated = true;
                 break;
             }
         }
 
-        if (isOrderUpdated && _orderDisplay != null)
+        if (orderUpdated && _orderDisplay != null)
         {
             _orderDisplay.ShowOrder(_pendingOrder);
         }
@@ -307,14 +271,14 @@ public class CustomerTesting : MonoBehaviour, IInteractable
             case CustomerState.WaitingAtRegister:
                 return CustomerManager.Instance != null &&
                        CustomerManager.Instance.CanServeAtRegister(this)
-                    ? $"Take order ({_customerName})"
+                    ? "Attend customer"
                     : "Wait for your turn";
 
             case CustomerState.MovingToWaitingPoint:
                 return "Going to waiting area";
 
             case CustomerState.WaitingForOrder:
-                return $"Waiting for call ({_customerName})";
+                return "Deliver ingredient";
 
             case CustomerState.MovingToOrderTable:
                 return "Collecting order";
