@@ -48,6 +48,7 @@ public class CustomerTesting : MonoBehaviour, IInteractable
 
     public event Action<CustomerTesting, bool> OnCustomerLeft;
     public event Action<CustomerTesting> OnOrderCompleted;
+    public event Action<CustomerTesting> OnArrivedAtOrderTable;
 
     public CustomerState State => _state;
     public IReadOnlyList<SphereColor> PendingOrder => _pendingOrder;
@@ -94,6 +95,18 @@ public class CustomerTesting : MonoBehaviour, IInteractable
         _state = CustomerState.MovingToWaitingPoint;
     }
 
+    public void CallToOrderTable(Transform orderTablePoint)
+    {
+        if (_state != CustomerState.WaitingForOrder)
+            return;
+
+        if (orderTablePoint == null)
+            return;
+
+        _targetPosition = orderTablePoint.position;
+        _state = CustomerState.MovingToOrderTable;
+    }
+
     private void Update()
     {
         if (GameManager.Instance == null ||
@@ -113,7 +126,7 @@ public class CustomerTesting : MonoBehaviour, IInteractable
                 break;
 
             case CustomerState.MovingToOrderTable:
-                // El movimiento hacia la mesa se conectará en el siguiente paso.
+                MoveTowardsTarget(_targetPosition, OnArrivedAtOrderTablePosition);
                 break;
 
             case CustomerState.Leaving:
@@ -172,6 +185,12 @@ public class CustomerTesting : MonoBehaviour, IInteractable
         }
     }
 
+    private void OnArrivedAtOrderTablePosition()
+    {
+        OnArrivedAtOrderTable?.Invoke(this);
+        Leave(true);
+    }
+
     private void OnArrivedAtExit()
     {
         OnCustomerLeft?.Invoke(this, _wasSatisfied);
@@ -227,38 +246,7 @@ public class CustomerTesting : MonoBehaviour, IInteractable
             return;
         }
 
-        // La entrega directa se conserva temporalmente.
-        // Se reemplazará por la mesa C en el siguiente paso.
-        if (_state != CustomerState.WaitingForOrder)
-            return;
-
-        if (playerInventory == null || !playerInventory.HasSphere())
-            return;
-
-        bool orderUpdated = false;
-
-        for (int i = _pendingOrder.Count - 1; i >= 0; i--)
-        {
-            SphereColor requiredColor = _pendingOrder[i];
-
-            if (playerInventory.TryRemoveSphere(requiredColor))
-            {
-                _pendingOrder.RemoveAt(i);
-                orderUpdated = true;
-                break;
-            }
-        }
-
-        if (orderUpdated && _orderDisplay != null)
-        {
-            _orderDisplay.ShowOrder(_pendingOrder);
-        }
-
-        if (_pendingOrder.Count == 0)
-        {
-            OnOrderCompleted?.Invoke(this);
-            Leave(true);
-        }
+        return;
     }
 
     public string GetInteractionText()

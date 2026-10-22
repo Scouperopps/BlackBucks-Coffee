@@ -91,6 +91,42 @@ public class CustomerManager : MonoBehaviour
         UpdateWaitingPositions();
     }
 
+    public CustomerTesting FindWaitingCustomer(string customerName)
+    {
+        if (string.IsNullOrWhiteSpace(customerName))
+            return null;
+
+        string searchedName = customerName.Trim();
+
+        foreach (CustomerTesting customer in _waitingCustomers)
+        {
+            if (customer == null)
+                continue;
+
+            if (customer.State != CustomerTesting.CustomerState.WaitingForOrder)
+                continue;
+
+            if (string.Equals(
+                customer.CustomerName.Trim(),
+                searchedName,
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return customer;
+            }
+        }
+
+        return null;
+    }
+
+    public void RemoveFromWaitingQueue(CustomerTesting customer)
+    {
+        if (customer == null)
+            return;
+
+        if (_waitingCustomers.Remove(customer))
+            UpdateWaitingPositions();
+    }
+
     public void RegisterWaitingCustomer(
         CustomerTesting customer,
         float basePatience)
