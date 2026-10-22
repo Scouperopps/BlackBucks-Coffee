@@ -1,14 +1,6 @@
-
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-
-public enum CustomerMood
-{
-    Happy,
-    Impatient,
-    Angry
-}
 
 public class CustomerManager : MonoBehaviour
 {
@@ -19,53 +11,53 @@ public class CustomerManager : MonoBehaviour
         public float initialTime;
     }
 
-    [Header("Puntos de atención")]
-    [SerializeField] private Transform registerPoint;
-    [SerializeField] private Transform waitingPoint;
-    [SerializeField] private Vector3 registerLineDirection = new Vector3(0, 0, -1);
-    [SerializeField] private Vector3 waitingLineDirection = new Vector3(1, 0, 0);
-    [SerializeField] private float registerSpacing = 1.5f;
-    [SerializeField] private float waitingSpacing = 1.5f;
+    [SerializeField] private Transform _registerPoint;
+    [SerializeField] private Transform _waitingPoint;
+    [SerializeField] private Vector3 _registerLineDirection = new Vector3(0, 0, -1);
+    [SerializeField] private Vector3 _waitingLineDirection = new Vector3(1, 0, 0);
+    [SerializeField] private float _registerSpacing = 1.5f;
+    [SerializeField] private float _waitingSpacing = 1.5f;
 
-    [Header("Paciencia")]
     [SerializeField] private float _extraTimePerItem = 5f;
-    [SerializeField] private float _impatientThreshold = 0.5f;
-    [SerializeField] private float _angryThreshold = 0.2f;
+    [SerializeField] private float _veryHappyThreshold = 0.8f;
+    [SerializeField] private float _happyThreshold = 0.6f;
+    [SerializeField] private float _neutralThreshold = 0.35f;
+    [SerializeField] private float _unhappyThreshold = 0.05f;
 
-    private readonly List<CustomerTesting> _registerQueue =
-        new List<CustomerTesting>();
+    private readonly List<CustomerTesting> _registerQueue = new List<CustomerTesting>();
+    private readonly List<CustomerTesting> _waitingCustomers = new List<CustomerTesting>();
+    private readonly List<TrackedCustomer> _trackedCustomers = new List<TrackedCustomer>();
 
-    private readonly List<CustomerTesting> _waitingCustomers =
-        new List<CustomerTesting>();
-
-    private readonly List<TrackedCustomer> _trackedCustomers =
-        new List<TrackedCustomer>();
-
-    public static CustomerManager Instance { get; private set; }
+    private static CustomerManager _instance;
+    public static CustomerManager Instance => _instance;
 
     public event Action<CustomerTesting, CustomerMood> OnCustomerMoodChanged;
 
     private void Awake()
     {
-        if (Instance != null && Instance != this)
+        if (_instance != null && _instance != this)
         {
             Destroy(gameObject);
             return;
         }
 
-        Instance = this;
+        _instance = this;
     }
 
     private void OnDestroy()
     {
-        if (Instance == this)
-            Instance = null;
+        if (_instance == this)
+        {
+            _instance = null;
+        }
     }
 
     public void AddToQueue(CustomerTesting customer)
     {
         if (customer == null || _registerQueue.Contains(customer))
+        {
             return;
+        }
 
         _registerQueue.Add(customer);
         UpdateRegisterQueuePositions();
@@ -73,39 +65,44 @@ public class CustomerManager : MonoBehaviour
 
     public bool CanServeAtRegister(CustomerTesting customer)
     {
-        return _registerQueue.Count > 0
-            && _registerQueue[0] == customer;
+        return _registerQueue.Count > 0 && _registerQueue[0] == customer;
     }
 
     public void ServeAtRegister(CustomerTesting customer)
     {
         if (!CanServeAtRegister(customer))
+        {
             return;
+        }
 
         _registerQueue.RemoveAt(0);
         UpdateRegisterQueuePositions();
 
         if (!_waitingCustomers.Contains(customer))
+        {
             _waitingCustomers.Add(customer);
+        }
 
         UpdateWaitingPositions();
     }
 
-    public void RegisterWaitingCustomer(
-        CustomerTesting customer,
-        float basePatience)
+    public void RegisterWaitingCustomer(CustomerTesting customer, float basePatience)
     {
         if (customer == null)
+        {
             return;
+        }
 
         foreach (TrackedCustomer tracked in _trackedCustomers)
         {
             if (tracked.customer == customer)
+            {
                 return;
+            }
         }
 
         int extraItems = Mathf.Max(0, customer.PendingOrder.Count - 1);
-        float totalPatience = basePatience + _extraTimePerItem * extraItems;
+        float totalPatience = basePatience + (_extraTimePerItem * extraItems);
 
         _trackedCustomers.Add(new TrackedCustomer
         {
@@ -120,30 +117,22 @@ public class CustomerManager : MonoBehaviour
 
     private void UpdateRegisterQueuePositions()
     {
-        Vector3 basePosition = registerPoint != null
-            ? registerPoint.position
-            : Vector3.zero;
+        Vector3 basePosition = _registerPoint != null ? _registerPoint.position : Vector3.zero;
 
         for (int i = 0; i < _registerQueue.Count; i++)
         {
-            Vector3 targetPosition = basePosition
-                + registerLineDirection.normalized * (i * registerSpacing);
-
+            Vector3 targetPosition = basePosition + (_registerLineDirection.normalized * (i * _registerSpacing));
             _registerQueue[i].SetTargetQueuePosition(targetPosition);
         }
     }
 
     private void UpdateWaitingPositions()
     {
-        Vector3 basePosition = waitingPoint != null
-            ? waitingPoint.position
-            : Vector3.zero;
+        Vector3 basePosition = _waitingPoint != null ? _waitingPoint.position : Vector3.zero;
 
         for (int i = 0; i < _waitingCustomers.Count; i++)
         {
-            Vector3 targetPosition = basePosition
-                + waitingLineDirection.normalized * (i * waitingSpacing);
-
+            Vector3 targetPosition = basePosition + (_waitingLineDirection.normalized * (i * _waitingSpacing));
             _waitingCustomers[i].SetTargetWaitingPosition(targetPosition);
         }
     }
@@ -151,7 +140,9 @@ public class CustomerManager : MonoBehaviour
     private void Update()
     {
         if (GameManager.Instance == null || !GameManager.Instance.IsPlaying)
+        {
             return;
+        }
 
         for (int i = _trackedCustomers.Count - 1; i >= 0; i--)
         {
@@ -164,27 +155,48 @@ public class CustomerManager : MonoBehaviour
             }
 
             if (entry.customer.State != CustomerTesting.CustomerState.WaitingForOrder)
+            {
                 continue;
+            }
 
             entry.remainingTime -= Time.deltaTime;
 
-            float ratio = entry.remainingTime / entry.initialTime;
-            OnCustomerMoodChanged?.Invoke(entry.customer, GetMood(ratio));
+            float ratio = Mathf.Clamp01(entry.remainingTime / entry.initialTime);
+            CustomerMood currentMood = GetCustomerMood(ratio);
+
+            OnCustomerMoodChanged?.Invoke(entry.customer, currentMood);
 
             if (entry.remainingTime <= 0f)
+            {
                 entry.customer.Leave(false);
+            }
         }
     }
 
-    private CustomerMood GetMood(float ratio)
+    private CustomerMood GetCustomerMood(float ratio)
     {
-        if (ratio <= _angryThreshold)
-            return CustomerMood.Angry;
+        if (ReputationManager.Instance != null)
+        {
+            return ReputationManager.Instance.CalculateCustomerMood(ratio);
+        }
 
-        if (ratio <= _impatientThreshold)
-            return CustomerMood.Impatient;
-
-        return CustomerMood.Happy;
+        if (ratio >= _veryHappyThreshold)
+        {
+            return CustomerMood.VeryHappy;
+        }
+        if (ratio >= _happyThreshold)
+        {
+            return CustomerMood.Happy;
+        }
+        if (ratio >= _neutralThreshold)
+        {
+            return CustomerMood.Neutral;
+        }
+        if (ratio >= _unhappyThreshold)
+        {
+            return CustomerMood.Unhappy;
+        }
+        return CustomerMood.Angry;
     }
 
     private void HandleOrderCompleted(CustomerTesting customer)
@@ -200,7 +212,9 @@ public class CustomerManager : MonoBehaviour
     private void RemoveTrackedCustomer(CustomerTesting customer)
     {
         if (customer == null)
+        {
             return;
+        }
 
         customer.OnOrderCompleted -= HandleOrderCompleted;
         customer.OnCustomerLeft -= HandleCustomerLeft;
@@ -214,7 +228,9 @@ public class CustomerManager : MonoBehaviour
         for (int i = _trackedCustomers.Count - 1; i >= 0; i--)
         {
             if (_trackedCustomers[i].customer == customer)
+            {
                 _trackedCustomers.RemoveAt(i);
+            }
         }
     }
 }
