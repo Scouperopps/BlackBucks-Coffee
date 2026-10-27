@@ -1,4 +1,3 @@
-
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -15,28 +14,25 @@ public class CustomerTesting : MonoBehaviour, IInteractable
         Leaving
     }
 
-    [Header("Movimiento")]
     [SerializeField] private float _moveSpeed = 2f;
     [SerializeField] private Transform _exitPoint;
     [SerializeField] private CustomerOrderDisplay _orderDisplay;
-    [Header("Nombre del cliente")]
     [SerializeField]
     private string[] _customerNames =
-{
-    "Daniel",
-    "Omar",
-    "Valentina",
-    "Carlos",
-    "Aime",
-    "Mateo",
-    "Michelle",
-    "Diego",
-    "Elena",
-    "Andres"
-};
+    {
+        "Daniel",
+        "Omar",
+        "Valentina",
+        "Carlos",
+        "Aime",
+        "Mateo",
+        "Michelle",
+        "Diego",
+        "Elena",
+        "Andres"
+    };
 
     private string _customerName;
-
     public string CustomerName => _customerName;
 
     private Vector3 _targetPosition;
@@ -45,13 +41,16 @@ public class CustomerTesting : MonoBehaviour, IInteractable
     private CustomerState _state;
     private bool _wasSatisfied;
     private float _patience;
+    private float _maxPatience;
 
     public event Action<CustomerTesting, bool> OnCustomerLeft;
     public event Action<CustomerTesting> OnOrderCompleted;
-    public event Action<CustomerTesting> OnArrivedAtOrderTable;
 
     public CustomerState State => _state;
     public IReadOnlyList<SphereColor> PendingOrder => _pendingOrder;
+
+    private const float ROTATION_SPEED = 10f;
+    private const float ARRIVAL_THRESHOLD = 0.05f;
 
     public void Init(
         Transform customerPoint,
@@ -65,8 +64,11 @@ public class CustomerTesting : MonoBehaviour, IInteractable
 
         _exitPoint = exitPoint;
         _patience = patience;
+        _maxPatience = patience > 0f ? patience : 1f;
 
-        _customerName = _customerNames.Length > 0? _customerNames[UnityEngine.Random.Range(0, _customerNames.Length)] : "Cliente";
+        _customerName = _customerNames.Length > 0
+            ? _customerNames[UnityEngine.Random.Range(0, _customerNames.Length)]
+            : "Customer";
 
         GenerateOrder(maxItems);
         _state = CustomerState.MovingToPoint;
@@ -89,30 +91,33 @@ public class CustomerTesting : MonoBehaviour, IInteractable
     public void SetTargetWaitingPosition(Vector3 waitingPosition)
     {
         if (_state == CustomerState.Leaving)
+        {
             return;
+        }
 
         _targetPosition = waitingPosition;
         _state = CustomerState.MovingToWaitingPoint;
     }
 
-    public void CallToOrderTable(Transform orderTablePoint)
-    {
-        if (_state != CustomerState.WaitingForOrder)
-            return;
-
-        if (orderTablePoint == null)
-            return;
-
-        _targetPosition = orderTablePoint.position;
-        _state = CustomerState.MovingToOrderTable;
-    }
-
     private void Update()
     {
-        if (GameManager.Instance == null ||
-            !GameManager.Instance.IsPlaying)
+        if (GameManager.Instance == null || !GameManager.Instance.IsPlaying)
         {
             return;
+        }
+
+        if (_state == CustomerState.WaitingAtRegister || _state == CustomerState.WaitingForOrder)
+        {
+            _patience -= Time.deltaTime;
+            if (_patience <= 0f)
+            {
+                if (ReputationManager.Instance != null)
+                {
+                    ReputationManager.Instance.ProcessCustomerLeftAngry();
+                }
+                Leave(false);
+                return;
+            }
         }
 
         switch (_state)
@@ -126,19 +131,20 @@ public class CustomerTesting : MonoBehaviour, IInteractable
                 break;
 
             case CustomerState.MovingToOrderTable:
-                MoveTowardsTarget(_targetPosition, OnArrivedAtOrderTablePosition);
                 break;
 
             case CustomerState.Leaving:
                 if (_exitPoint != null)
+                {
                     MoveTowardsTarget(_exitPoint.position, OnArrivedAtExit);
+                }
                 break;
         }
     }
 
     private void MoveTowardsTarget(
         Vector3 targetPosition,
-        Action onArrived)
+        Action onArrivedAction)
     {
         targetPosition.y = transform.position.y;
 
@@ -148,22 +154,22 @@ public class CustomerTesting : MonoBehaviour, IInteractable
             _moveSpeed * Time.deltaTime
         );
 
-        Vector3 direction = targetPosition - transform.position;
+        Vector3 movementDirection = targetPosition - transform.position;
 
-        if (direction.sqrMagnitude > 0.01f)
+        if (movementDirection.sqrMagnitude > 0.01f)
         {
-            Quaternion targetRotation = Quaternion.LookRotation(direction);
+            Quaternion targetRotation = Quaternion.LookRotation(movementDirection);
 
             transform.rotation = Quaternion.Slerp(
                 transform.rotation,
                 targetRotation,
-                10f * Time.deltaTime
+                ROTATION_SPEED * Time.deltaTime
             );
         }
 
-        if (Vector3.Distance(transform.position, targetPosition) < 0.05f)
+        if (Vector3.Distance(transform.position, targetPosition) < ARRIVAL_THRESHOLD)
         {
-            onArrived?.Invoke();
+            onArrivedAction?.Invoke();
         }
     }
 
@@ -183,12 +189,6 @@ public class CustomerTesting : MonoBehaviour, IInteractable
                 _patience
             );
         }
-    }
-
-    private void OnArrivedAtOrderTablePosition()
-    {
-        OnArrivedAtOrderTable?.Invoke(this);
-        Leave(true);
     }
 
     private void OnArrivedAtExit()
@@ -221,9 +221,9 @@ public class CustomerTesting : MonoBehaviour, IInteractable
         }
     }
 
-    public void Leave(bool satisfied)
+    public void Leave(bool isSatisfied)
     {
-        _wasSatisfied = satisfied;
+        _wasSatisfied = isSatisfied;
         _state = CustomerState.Leaving;
     }
 
@@ -232,10 +232,14 @@ public class CustomerTesting : MonoBehaviour, IInteractable
         if (_state == CustomerState.WaitingAtRegister)
         {
             if (CustomerManager.Instance == null)
+            {
                 return;
+            }
 
             if (!CustomerManager.Instance.CanServeAtRegister(this))
+            {
                 return;
+            }
 
             if (_orderDisplay != null)
             {
@@ -246,7 +250,47 @@ public class CustomerTesting : MonoBehaviour, IInteractable
             return;
         }
 
-        return;
+        if (_state != CustomerState.WaitingForOrder)
+        {
+            return;
+        }
+
+        if (playerInventory == null || !playerInventory.HasSphere())
+        {
+            return;
+        }
+
+        bool isOrderUpdated = false;
+
+        for (int i = _pendingOrder.Count - 1; i >= 0; i--)
+        {
+            SphereColor requiredColor = _pendingOrder[i];
+
+            if (playerInventory.TryRemoveSphere(requiredColor))
+            {
+                _pendingOrder.RemoveAt(i);
+                isOrderUpdated = true;
+                break;
+            }
+        }
+
+        if (isOrderUpdated && _orderDisplay != null)
+        {
+            _orderDisplay.ShowOrder(_pendingOrder);
+        }
+
+        if (_pendingOrder.Count == 0)
+        {
+            float remainingPatienceRatio = Mathf.Clamp01(_patience / _maxPatience);
+
+            if (ReputationManager.Instance != null)
+            {
+                ReputationManager.Instance.ProcessOrderDelivery(remainingPatienceRatio);
+            }
+
+            OnOrderCompleted?.Invoke(this);
+            Leave(true);
+        }
     }
 
     public string GetInteractionText()
