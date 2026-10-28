@@ -1,10 +1,11 @@
 public enum GameState
 {
     MainMenu,
+    LevelSelection,
     Playing,
     Paused,
-    Victory,
-    Defeat,
     Settings,
-    Tutorial
+    Tutorial,
+    Victory,
+    Defeat
 }

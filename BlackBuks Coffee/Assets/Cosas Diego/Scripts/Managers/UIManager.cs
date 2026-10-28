@@ -1,27 +1,24 @@
-using TMPro;
 using UnityEngine;
 
 public class UIManager : MonoBehaviour
 {
-    public static UIManager Instance { get; private set; }
+    private static UIManager _instance;
+    public static UIManager Instance => _instance;
 
-    [Header("Panels")]
-    public GameObject mainMenuPanel;
-    public GameObject playingPanel;
-    public GameObject pausePanel;
-    public GameObject victoryPanel;
-    public GameObject defeatPanel;
-    public GameObject settingsPanel;
-    public GameObject tutorialPanel;
-
-    [Header("Localization")]
-    [SerializeField] private TMP_Dropdown _languageDropdown;
+    [SerializeField] private GameObject _mainMenuPanel;
+    [SerializeField] private GameObject _levelSelectionPanel;
+    [SerializeField] private GameObject _gameUIPanel;
+    [SerializeField] private GameObject _pausePanel;
+    [SerializeField] private GameObject _settingsPanel;
+    [SerializeField] private GameObject _tutorialPanel;
+    [SerializeField] private GameObject _victoryPanel;
+    [SerializeField] private GameObject _defeatPanel;
 
     private void Awake()
     {
-        if (Instance == null)
+        if (_instance == null)
         {
-            Instance = this;
+            _instance = this;
         }
         else
         {
@@ -29,119 +26,56 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    private void Start()
-    {
-        InitializeLanguageDropdown();
-    }
-
-    private void InitializeLanguageDropdown()
-    {
-        if (_languageDropdown == null || LocalizationManager.Instance == null)
-            return;
-
-        _languageDropdown.ClearOptions();
-
-        var options = new System.Collections.Generic.List<string>(System.Enum.GetNames(typeof(Language)));
-        _languageDropdown.AddOptions(options);
-
-        _languageDropdown.value = (int)LocalizationManager.Instance.CurrentLanguage;
-        _languageDropdown.RefreshShownValue();
-
-        _languageDropdown.onValueChanged.RemoveAllListeners();
-        _languageDropdown.onValueChanged.AddListener(OnLanguageDropdownChanged);
-    }
-
-    public void OnLanguageDropdownChanged(int index)
-    {
-        if (LocalizationManager.Instance != null)
-        {
-            LocalizationManager.Instance.SetLanguage((Language)index);
-        }
-    }
-
     public void DisplayPanelByState(GameState state)
     {
-        DisableAllPanels();
+        HideAllPanels();
 
         switch (state)
         {
             case GameState.MainMenu:
-                if (mainMenuPanel != null) mainMenuPanel.SetActive(true);
+                if (_mainMenuPanel != null) _mainMenuPanel.SetActive(true);
                 break;
+
+            case GameState.LevelSelection:
+                if (_levelSelectionPanel != null) _levelSelectionPanel.SetActive(true);
+                break;
+
             case GameState.Playing:
-                if (playingPanel != null) playingPanel.SetActive(true);
+                if (_gameUIPanel != null) _gameUIPanel.SetActive(true);
                 break;
+
             case GameState.Paused:
-                if (pausePanel != null) pausePanel.SetActive(true);
+                if (_gameUIPanel != null) _gameUIPanel.SetActive(true);
+                if (_pausePanel != null) _pausePanel.SetActive(true);
                 break;
-            case GameState.Victory:
-                if (victoryPanel != null) victoryPanel.SetActive(true);
-                break;
-            case GameState.Defeat:
-                if (defeatPanel != null) defeatPanel.SetActive(true);
-                break;
+
             case GameState.Settings:
-                if (settingsPanel != null) settingsPanel.SetActive(true);
+                if (_settingsPanel != null) _settingsPanel.SetActive(true);
                 break;
+
             case GameState.Tutorial:
-                if (tutorialPanel != null) tutorialPanel.SetActive(true);
+                if (_tutorialPanel != null) _tutorialPanel.SetActive(true);
+                break;
+
+            case GameState.Victory:
+                if (_victoryPanel != null) _victoryPanel.SetActive(true);
+                break;
+
+            case GameState.Defeat:
+                if (_defeatPanel != null) _defeatPanel.SetActive(true);
                 break;
         }
     }
 
-    private void DisableAllPanels()
+    private void HideAllPanels()
     {
-        if (mainMenuPanel != null) mainMenuPanel.SetActive(false);
-        if (playingPanel != null) playingPanel.SetActive(false);
-        if (pausePanel != null) pausePanel.SetActive(false);
-        if (victoryPanel != null) victoryPanel.SetActive(false);
-        if (defeatPanel != null) defeatPanel.SetActive(false);
-        if (settingsPanel != null) settingsPanel.SetActive(false);
-        if (tutorialPanel != null) tutorialPanel.SetActive(false);
-    }
-
-    public void ClickPlayButton()
-    {
-        GameManager.Instance.StartGame();
-    }
-
-    public void ClickResumeButton()
-    {
-        GameManager.Instance.ResumeGame();
-    }
-
-    public void ClickRestartButton()
-    {
-        GameManager.Instance.RestartGame();
-    }
-
-    public void ClickMainMenuButton()
-    {
-        GameManager.Instance.ReturnToMainMenu();
-    }
-
-    public void ClickSettingsButton()
-    {
-        GameManager.Instance.OpenSettings();
-    }
-
-    public void ClickBackFromSettingsButton()
-    {
-        GameManager.Instance.CloseSettings();
-    }
-
-    public void ClickTutorialButton()
-    {
-        GameManager.Instance.OpenTutorial();
-    }
-
-    public void ClickBackFromTutorialButton()
-    {
-        GameManager.Instance.CloseTutorial();
-    }
-
-    public void ClickQuitButton()
-    {
-        GameManager.Instance.QuitGame();
+        if (_mainMenuPanel != null) _mainMenuPanel.SetActive(false);
+        if (_levelSelectionPanel != null) _levelSelectionPanel.SetActive(false);
+        if (_gameUIPanel != null) _gameUIPanel.SetActive(false);
+        if (_pausePanel != null) _pausePanel.SetActive(false);
+        if (_settingsPanel != null) _settingsPanel.SetActive(false);
+        if (_tutorialPanel != null) _tutorialPanel.SetActive(false);
+        if (_victoryPanel != null) _victoryPanel.SetActive(false);
+        if (_defeatPanel != null) _defeatPanel.SetActive(false);
     }
 }

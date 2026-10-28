@@ -12,6 +12,14 @@ public class LocalizationManager : MonoBehaviour
     public Language CurrentLanguage => _currentLanguage;
     public event Action OnLanguageChanged;
 
+    public void SetLanguageByIndex(int index)
+    {
+        if (Enum.IsDefined(typeof(Language), index))
+        {
+            SetLanguage((Language)index);
+        }
+    }
+
     private void Awake()
     {
         if (Instance == null)

@@ -3,19 +3,20 @@ using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
-    public static GameManager Instance { get; private set; }
+    private static GameManager _instance;
+    public static GameManager Instance => _instance;
 
     private GameState _currentState;
-    private GameState _originState = GameState.MainMenu; // Guarda si venimos de MainMenu o Paused
+    private GameState _originState = GameState.MainMenu;
 
     public GameState CurrentState => _currentState;
     public bool IsPlaying => _currentState == GameState.Playing;
 
     private void Awake()
     {
-        if (Instance == null)
+        if (_instance == null)
         {
-            Instance = this;
+            _instance = this;
         }
         else
         {
@@ -26,6 +27,19 @@ public class GameManager : MonoBehaviour
     private void Start()
     {
         SetGameState(GameState.MainMenu);
+
+        if (ReputationManager.Instance != null)
+        {
+            ReputationManager.Instance.OnReputationDepleted += HandleReputationDepleted;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (ReputationManager.Instance != null)
+        {
+            ReputationManager.Instance.OnReputationDepleted -= HandleReputationDepleted;
+        }
     }
 
     private void Update()
@@ -53,13 +67,21 @@ public class GameManager : MonoBehaviour
             {
                 CloseTutorial();
             }
+            else if (_currentState == GameState.LevelSelection)
+            {
+                CloseLevelSelection();
+            }
         }
     }
 
     public void SetGameState(GameState newState)
     {
         _currentState = newState;
-        UIManager.Instance.DisplayPanelByState(_currentState);
+
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.DisplayPanelByState(_currentState);
+        }
     }
 
     public void StartGame()
@@ -77,10 +99,23 @@ public class GameManager : MonoBehaviour
         SetGameState(GameState.Playing);
     }
 
+    public void OpenLevelSelection()
+    {
+        if (_currentState == GameState.MainMenu || _currentState == GameState.Paused)
+        {
+            _originState = _currentState;
+        }
+        SetGameState(GameState.LevelSelection);
+    }
+
+    public void CloseLevelSelection()
+    {
+        SetGameState(_originState);
+    }
+
     public void OpenSettings()
     {
-        // Solo guardamos el origen si venimos de las pantallas principales
-        if (_currentState == GameState.MainMenu || _currentState == GameState.Paused)
+        if (_currentState == GameState.MainMenu || _currentState == GameState.Paused || _currentState == GameState.LevelSelection)
         {
             _originState = _currentState;
         }
@@ -89,12 +124,11 @@ public class GameManager : MonoBehaviour
 
     public void CloseSettings()
     {
-        SetGameState(_originState); // Regresa exactamente a MainMenu o Paused
+        SetGameState(_originState);
     }
 
     public void OpenTutorial()
     {
-        // Solo guardamos el origen si venimos de las pantallas principales
         if (_currentState == GameState.MainMenu || _currentState == GameState.Paused)
         {
             _originState = _currentState;
@@ -104,7 +138,7 @@ public class GameManager : MonoBehaviour
 
     public void CloseTutorial()
     {
-        SetGameState(_originState); // Regresa exactamente a MainMenu o Paused
+        SetGameState(_originState);
     }
 
     public void TriggerVictory()
@@ -115,6 +149,23 @@ public class GameManager : MonoBehaviour
     public void TriggerDefeat()
     {
         SetGameState(GameState.Defeat);
+    }
+
+    public void EndGame(bool isVictory)
+    {
+        if (isVictory)
+        {
+            TriggerVictory();
+        }
+        else
+        {
+            TriggerDefeat();
+        }
+    }
+
+    private void HandleReputationDepleted()
+    {
+        TriggerDefeat();
     }
 
     public void RestartGame()

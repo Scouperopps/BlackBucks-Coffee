@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -27,58 +28,96 @@ public static class LevelSelection
 
 public class WaveManager : MonoBehaviour
 {
+    private static WaveManager _instance;
+    public static WaveManager Instance => _instance;
+
     [SerializeField] private CustomerTesting _customerPrefab;
     [SerializeField] private Transform _spawnPoint;
     [SerializeField] private Transform _customerPoint;
     [SerializeField] private Transform _exitPoint;
     [SerializeField] private int _maxAngryCustomersAllowed = 3;
 
-    public List<LevelData> levels = new List<LevelData>();
-    public float timeBetweenWaves = 3f;
-    [Range(0f, 0.5f)] public float spawnJitter = 0.2f;
+    [SerializeField] private List<LevelData> _levels = new List<LevelData>();
+    [SerializeField] private float _timeBetweenWaves = 3f;
+    [SerializeField] [Range(0f, 0.5f)] private float _spawnJitter = 0.2f;
 
     private Coroutine _levelRoutine;
-    private int _activeCustomers = 0;
-    private int _angryCustomerCount = 0;
-    private bool _levelStarted = false;
-    private bool _allWavesSpawned = false;
+    private int _activeCustomers;
+    private int _angryCustomerCount;
+    private bool _levelStarted;
+    private bool _allWavesSpawned;
 
     public int ActiveCustomers => _activeCustomers;
+    public IReadOnlyList<LevelData> Levels => _levels;
 
-    public System.Action<int> OnWaveStarted;
-    public System.Action OnAllWavesCompleted;
-    public System.Action<bool> OnCustomerResolved;
+    public event Action<int> OnWaveStarted;
+    public event Action OnAllWavesCompleted;
+    public event Action<bool> OnCustomerResolved;
+
+    private void Awake()
+    {
+        if (_instance == null)
+        {
+            _instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
 
     private void Update()
     {
         if (GameManager.Instance == null || !GameManager.Instance.IsPlaying)
+        {
             return;
+        }
 
         if (!_levelStarted)
         {
-            _levelStarted = true;
             StartLevel(LevelSelection.SelectedLevel);
         }
     }
 
     public void StartLevel(int levelIndex)
     {
-        if (levelIndex < 0 || levelIndex >= levels.Count)
+        if (levelIndex < 0 || levelIndex >= _levels.Count)
+        {
             return;
+        }
 
         if (_levelRoutine != null)
+        {
             StopCoroutine(_levelRoutine);
+        }
 
+        _levelStarted = true;
+        _activeCustomers = 0;
         _angryCustomerCount = 0;
         _allWavesSpawned = false;
-        _levelRoutine = StartCoroutine(RunLevel(levels[levelIndex]));
+
+        _levelRoutine = StartCoroutine(RunLevel(_levels[levelIndex]));
+    }
+
+    public void ResetLevelState()
+    {
+        if (_levelRoutine != null)
+        {
+            StopCoroutine(_levelRoutine);
+            _levelRoutine = null;
+        }
+
+        _levelStarted = false;
+        _activeCustomers = 0;
+        _angryCustomerCount = 0;
+        _allWavesSpawned = false;
     }
 
     private IEnumerator RunLevel(LevelData level)
     {
         for (int i = 0; i < level.waves.Count; i++)
         {
-            yield return StartCoroutine(WaitForSecondsPaused(timeBetweenWaves));
+            yield return StartCoroutine(WaitForSecondsPaused(_timeBetweenWaves));
             OnWaveStarted?.Invoke(i);
             yield return StartCoroutine(SpawnWave(level.waves[i], level.customerPatience, level.maxItemsPerOrder));
         }
@@ -99,7 +138,7 @@ public class WaveManager : MonoBehaviour
 
             SpawnCustomer(patience, maxItems);
 
-            float jitter = Random.Range(1f - spawnJitter, 1f + spawnJitter);
+            float jitter = UnityEngine.Random.Range(1f - _spawnJitter, 1f + _spawnJitter);
             yield return StartCoroutine(WaitForSecondsPaused(wave.timeBetweenSpawns * jitter));
         }
     }
@@ -120,7 +159,9 @@ public class WaveManager : MonoBehaviour
     private void SpawnCustomer(float patience, int maxItems)
     {
         if (_customerPrefab == null || _spawnPoint == null)
+        {
             return;
+        }
 
         CustomerTesting customer = Instantiate(_customerPrefab, _spawnPoint.position, _spawnPoint.rotation);
         customer.Init(_customerPoint, _exitPoint, patience, maxItems);
@@ -145,7 +186,10 @@ public class WaveManager : MonoBehaviour
             _angryCustomerCount++;
             if (_angryCustomerCount >= _maxAngryCustomersAllowed)
             {
-                GameManager.Instance.TriggerDefeat();
+                if (GameManager.Instance != null)
+                {
+                    GameManager.Instance.TriggerDefeat();
+                }
                 return;
             }
         }
@@ -157,7 +201,10 @@ public class WaveManager : MonoBehaviour
     {
         if (_allWavesSpawned && _activeCustomers == 0 && _angryCustomerCount < _maxAngryCustomersAllowed)
         {
-            GameManager.Instance.TriggerVictory();
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.TriggerVictory();
+            }
         }
     }
 }
