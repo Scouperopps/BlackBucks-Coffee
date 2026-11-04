@@ -9,8 +9,7 @@ public class PlayerInteraction : MonoBehaviour
 
     private void Update()
     {
-        if (!CanInteract())
-            return;
+        if (!CanInteract()) return;
 
         DetectInteractable();
 
@@ -22,38 +21,22 @@ public class PlayerInteraction : MonoBehaviour
 
     private bool CanInteract()
     {
-        // NUEVO: Si la interfaz de entrega está abierta, no se puede interactuar con nada.
-        if (DeliveryOrderUI.IsOpen) return false;
-
         if (GameManager.Instance == null) return false;
-
-        // Permite la interacción en partida normal o durante el tutorial
         return GameManager.Instance.IsPlaying || GameManager.Instance.CurrentState == GameState.Tutorial;
     }
 
     private void DetectInteractable()
     {
         currentInteractable = null;
-
-        Collider[] colliders = Physics.OverlapSphere(
-            transform.position,
-            interactionRange
-        );
-
+        Collider[] colliders = Physics.OverlapSphere(transform.position, interactionRange);
         float closestDistance = Mathf.Infinity;
 
         foreach (Collider collider in colliders)
         {
-            // GetComponentInParent asegura encontrar IInteractable aunque el collider esté en un objeto hijo
             IInteractable interactable = collider.GetComponentInParent<IInteractable>();
+            if (interactable == null) continue;
 
-            if (interactable == null)
-                continue;
-
-            float distance = Vector3.Distance(
-                transform.position,
-                collider.transform.position
-            );
+            float distance = Vector3.Distance(transform.position, collider.transform.position);
 
             if (distance < closestDistance)
             {
@@ -66,9 +49,6 @@ public class PlayerInteraction : MonoBehaviour
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(
-            transform.position,
-            interactionRange
-        );
+        Gizmos.DrawWireSphere(transform.position, interactionRange);
     }
 }

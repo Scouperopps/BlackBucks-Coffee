@@ -21,10 +21,23 @@ public class LevelManager : MonoBehaviour
         }
     }
 
+    public bool IsLevelUnlocked(int levelIndex)
+    {
+        if (SaveSystem.CurrentData == null) SaveSystem.LoadSlot(SaveSystem.ActiveSlot);
+        if (levelIndex <= 1) return true;
+
+        return levelIndex <= SaveSystem.CurrentData.highestUnlockedLevel;
+    }
+
     public void SelectAndStartLevel(int levelIndex)
     {
+        if (!IsLevelUnlocked(levelIndex))
+        {
+            Debug.LogWarning($"[LevelManager] Nivel {levelIndex} bloqueado.");
+            return;
+        }
+
         _selectedLevelIndex = levelIndex;
-        LevelSelection.SelectedLevel = levelIndex;
 
         if (WaveManager.Instance != null)
         {
