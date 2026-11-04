@@ -55,8 +55,7 @@ public class GameManager : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-<<<<<<< Updated upstream
-            // NUEVO: Evitar pausar el juego si se está cerrando el panel de entregas
+            // Agregado por tu compañero: Evitar pausar si se está interactuando con las entregas
             if (DeliveryOrderUI.IsOpen)
                 return;
 
@@ -67,6 +66,10 @@ public class GameManager : MonoBehaviour
             else if (_currentState == GameState.Paused)
             {
                 ResumeGame();
+            }
+            else if (_currentState == GameState.SaveMenu)
+            {
+                CloseSaveMenu();
             }
             else if (_currentState == GameState.Settings)
             {
@@ -80,15 +83,10 @@ public class GameManager : MonoBehaviour
             {
                 CloseLevelSelection();
             }
-=======
-            if (_currentState == GameState.Playing) PauseGame();
-            else if (_currentState == GameState.Paused) ResumeGame();
-            else if (_currentState == GameState.SaveMenu) CloseSaveMenu();
-            else if (_currentState == GameState.Settings) CloseSettings();
-            else if (_currentState == GameState.Tutorial) CloseTutorial();
-            else if (_currentState == GameState.LevelSelection) CloseLevelSelection();
-            else CloseAdditionalPanels(); // Cierra Logros o Créditos con ESC si están abiertos
->>>>>>> Stashed changes
+            else
+            {
+                CloseAdditionalPanels();
+            }
         }
     }
 
@@ -105,6 +103,7 @@ public class GameManager : MonoBehaviour
     public void PauseGame() => SetGameState(GameState.Paused);
     public void ResumeGame() => SetGameState(GameState.Playing);
 
+    // --- MENÚ DE GUARDADO ---
     public void OpenSaveMenu()
     {
         if (_currentState == GameState.MainMenu)
@@ -114,6 +113,7 @@ public class GameManager : MonoBehaviour
 
     public void CloseSaveMenu() => SetGameState(_originState);
 
+    // --- SELECCIÓN DE NIVEL, AJUSTES Y TUTORIAL ---
     public void OpenLevelSelection()
     {
         if (_currentState == GameState.MainMenu || _currentState == GameState.Paused || _currentState == GameState.SaveMenu)
@@ -141,7 +141,7 @@ public class GameManager : MonoBehaviour
 
     public void CloseTutorial() => SetGameState(_originState);
 
-    // --- MÉTODOS PARA LOGROS Y CRÉDITOS ---
+    // --- LOGROS Y CRÉDITOS ---
     public void OpenAchievements()
     {
         if (UIManager.Instance != null) UIManager.Instance.ShowAchievementsPanel(true);
@@ -168,7 +168,7 @@ public class GameManager : MonoBehaviour
         CloseCredits();
     }
 
-    // --- CONDICIONES DE VICTORIA / DERROTA Y ESCENA ---
+    // --- VICTORIA, DERROTA Y REINICIO ---
     public void TriggerVictory()
     {
         SetGameState(GameState.Victory);

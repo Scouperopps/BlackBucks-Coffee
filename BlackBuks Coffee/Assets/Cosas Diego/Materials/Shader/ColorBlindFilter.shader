@@ -1,70 +1,62 @@
-Shader "Custom/ColorblindFilter"
+Shader "Custom/ColorblindURP"
 {
     Properties
     {
-        _MainTex ("Texture", 2D) = "white" {}
-        _Mode ("Type (0: Normal, 1: Protanopia, 2: Deuteranopia, 3: Tritanopia)", Int) = 0
+        _Type ("Type (0: Normal, 1: Protanopia, 2: Deuteranopia, 3: Tritanopia)", Int) = 0
     }
     SubShader
     {
-        Tags { "RenderType"="Opaque" "Queue"="Overlay" }
+        Tags { "RenderType"="Opaque" "RenderPipeline"="UniversalPipeline" }
+        LOD 100
+        ZWrite Off ZTest Always Cull Off
+
         Pass
         {
-            CGPROGRAM
-            #pragma vertex vert
-            #pragma fragment frag
-            #include "UnityCG.cginc"
+            Name "ColorblindPass"
 
-            struct appdata
+            HLSLPROGRAM
+            #pragma vertex Vert
+            #pragma fragment Frag
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
+
+            // OBLIGATORIO EN URP: Constant Buffer para sincronizar el material con C# e Inspector
+            CBUFFER_START(UnityPerMaterial)
+                int _Type;
+            CBUFFER_END
+
+            half4 Frag(Varyings input) : SV_Target
             {
-                float4 vertex : POSITION;
-                float2 uv : TEXCOORD0;
-            };
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+                
+                half4 col = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, input.texcoord);
 
-            struct v2f
-            {
-                float2 uv : TEXCOORD0;
-                float4 vertex : SV_POSITION;
-            };
-
-            sampler2D _MainTex;
-            int _Mode;
-
-            v2f vert (appdata v)
-            {
-                v2f o;
-                o.vertex = UnityObjectToClipPos(v.vertex);
-                o.uv = v.uv;
-                return o;
-            }
-
-            fixed4 frag (v2f i) : SV_Target
-            {
-                fixed4 col = tex2D(_MainTex, i.uv);
-                float3 c = col.rgb;
-
-                if (_Mode == 1) // Protanopia
+                if (_Type == 1) // Protanopia
                 {
-                    col.r = 0.56667 * c.r + 0.43333 * c.g;
-                    col.g = 0.55833 * c.r + 0.44167 * c.g;
-                    col.b = 0.24167 * c.g + 0.75833 * c.b;
+                    float r = col.r * 0.56667 + col.g * 0.43333;
+                    float g = col.r * 0.55833 + col.g * 0.44167;
+                    float b = col.r * 0.0 + col.g * 0.24167 + col.b * 0.75833;
+                    col = half4(r, g, b, col.a);
                 }
-                else if (_Mode == 2) // Deuteranopia
+                else if (_Type == 2) // Deuteranopia
                 {
-                    col.r = 0.62500 * c.r + 0.37500 * c.g;
-                    col.g = 0.70000 * c.r + 0.30000 * c.g;
-                    col.b = 0.30000 * c.g + 0.70000 * c.b;
+                    float r = col.r * 0.625 + col.g * 0.375;
+                    float g = col.r * 0.7 + col.g * 0.3;
+                    float b = col.r * 0.0 + col.g * 0.3 + col.b * 0.7;
+                    col = half4(r, g, b, col.a);
                 }
-                else if (_Mode == 3) // Tritanopia
+                else if (_Type == 3) // Tritanopia
                 {
-                    col.r = 0.95000 * c.r + 0.05000 * c.g;
-                    col.g = 0.43333 * c.g + 0.56667 * c.b;
-                    col.b = 0.47500 * c.g + 0.52500 * c.b;
+                    float r = col.r * 0.95 + col.g * 0.05;
+                    float g = col.r * 0.0 + col.g * 0.43333 + col.b * 0.56667;
+                    float b = col.r * 0.0 + col.g * 0.475 + col.b * 0.525;
+                    col = half4(r, g, b, col.a);
                 }
 
                 return col;
             }
-            ENDCG
+            ENDHLSL
         }
     }
 }

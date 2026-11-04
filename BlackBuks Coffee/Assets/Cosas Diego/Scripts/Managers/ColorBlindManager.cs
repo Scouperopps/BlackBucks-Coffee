@@ -24,22 +24,29 @@ public class ColorblindManager : MonoBehaviour
     private void Start()
     {
         int savedMode = PlayerPrefs.GetInt("ColorblindMode", 0);
-        SetColorblindMode(savedMode);
 
         if (modeDropdown != null)
         {
             modeDropdown.value = savedMode;
             modeDropdown.onValueChanged.AddListener(SetColorblindMode);
         }
+
+        SetColorblindMode(savedMode);
     }
 
     public void SetColorblindMode(int modeIndex)
     {
+        Debug.Log($"[ColorblindManager] Cambiando modo a: {modeIndex}");
+    
         if (colorblindMaterial != null)
         {
-            colorblindMaterial.SetInt("_Mode", modeIndex);
+            colorblindMaterial.SetInt("_Type", modeIndex);
         }
-
+        else
+        {
+            Debug.LogError("[ColorblindManager] ¡ATENCIÓN! 'colorblindMaterial' está NULL en el Inspector.");
+        }
+    
         PlayerPrefs.SetInt("ColorblindMode", modeIndex);
         PlayerPrefs.Save();
     }
