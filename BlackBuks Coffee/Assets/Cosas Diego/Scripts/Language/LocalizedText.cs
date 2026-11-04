@@ -44,7 +44,10 @@ public class LocalizedText : MonoBehaviour
     public void RefreshText()
     {
         if (LocalizationManager.Instance == null)
+        {
+            ApplyText(_defaultInspectorText);
             return;
+        }
 
         if (string.IsNullOrEmpty(_localizationKey))
         {
@@ -53,7 +56,28 @@ public class LocalizedText : MonoBehaviour
         }
 
         string translatedValue = LocalizationManager.Instance.GetText(_localizationKey);
+
+        // Si la clave no existe en el sistema de traducción, usa el texto por defecto del Inspector
+        if (string.IsNullOrEmpty(translatedValue) || translatedValue == _localizationKey)
+        {
+            ApplyText(_defaultInspectorText);
+            return;
+        }
+
         ApplyText(translatedValue);
+    }
+
+    // --- AÑADIDO: Permite cambiar la clave y actualizar el texto dinámicamente desde otros scripts (ej. TutorialUI) ---
+    public void SetKey(string newKey, string fallbackText = "")
+    {
+        _localizationKey = newKey;
+
+        if (!string.IsNullOrEmpty(fallbackText))
+        {
+            _defaultInspectorText = fallbackText;
+        }
+
+        RefreshText();
     }
 
     private void ApplyText(string value)

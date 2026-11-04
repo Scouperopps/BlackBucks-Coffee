@@ -54,6 +54,8 @@ public class UIManager : MonoBehaviour
                 break;
 
             case GameState.Tutorial:
+                // Mantiene visible el HUD del juego mientras muestra la caja de instrucciones del tutorial
+                if (_gameUIPanel != null) _gameUIPanel.SetActive(true);
                 if (_tutorialPanel != null) _tutorialPanel.SetActive(true);
                 break;
 

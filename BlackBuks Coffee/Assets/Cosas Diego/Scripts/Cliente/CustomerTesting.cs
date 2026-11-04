@@ -1,4 +1,3 @@
-
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -19,24 +18,16 @@ public class CustomerTesting : MonoBehaviour, IInteractable
     [SerializeField] private float _moveSpeed = 2f;
     [SerializeField] private Transform _exitPoint;
     [SerializeField] private CustomerOrderDisplay _orderDisplay;
+    
     [Header("Nombre del cliente")]
     [SerializeField]
     private string[] _customerNames =
-{
-    "Daniel",
-    "Omar",
-    "Valentina",
-    "Carlos",
-    "Aime",
-    "Mateo",
-    "Michelle",
-    "Diego",
-    "Elena",
-    "Andres"
-};
+    {
+        "Daniel", "Omar", "Valentina", "Carlos", "Aime",
+        "Mateo", "Michelle", "Diego", "Elena", "Andres"
+    };
 
     private string _customerName;
-
     public string CustomerName => _customerName;
 
     private Vector3 _targetPosition;
@@ -66,7 +57,7 @@ public class CustomerTesting : MonoBehaviour, IInteractable
         _exitPoint = exitPoint;
         _patience = patience;
 
-        _customerName = _customerNames.Length > 0? _customerNames[UnityEngine.Random.Range(0, _customerNames.Length)] : "Cliente";
+        _customerName = _customerNames.Length > 0 ? _customerNames[UnityEngine.Random.Range(0, _customerNames.Length)] : "Cliente";
 
         GenerateOrder(maxItems);
         _state = CustomerState.MovingToPoint;
@@ -105,15 +96,21 @@ public class CustomerTesting : MonoBehaviour, IInteractable
 
         _targetPosition = orderTablePoint.position;
         _state = CustomerState.MovingToOrderTable;
+
+        // AL ESCRIBIR EL NOMBRE Y LLAMAR AL CLIENTE, SE COMPLETA EL PASO 'ServeCustomer'
+        if (TutorialManager.Instance != null && TutorialManager.Instance.IsTutorialActive)
+        {
+            if (TutorialManager.Instance.CurrentStep == TutorialStep.ServeCustomer)
+            {
+                TutorialManager.Instance.CompleteStep(TutorialStep.ServeCustomer);
+            }
+        }
     }
 
     private void Update()
     {
-        if (GameManager.Instance == null ||
-            !GameManager.Instance.IsPlaying)
-        {
+        if (!CanUpdateState())
             return;
-        }
 
         switch (_state)
         {
@@ -136,9 +133,13 @@ public class CustomerTesting : MonoBehaviour, IInteractable
         }
     }
 
-    private void MoveTowardsTarget(
-        Vector3 targetPosition,
-        Action onArrived)
+    private bool CanUpdateState()
+    {
+        if (GameManager.Instance == null) return false;
+        return GameManager.Instance.IsPlaying || GameManager.Instance.CurrentState == GameState.Tutorial;
+    }
+
+    private void MoveTowardsTarget(Vector3 targetPosition, Action onArrived)
     {
         targetPosition.y = transform.position.y;
 
@@ -153,7 +154,6 @@ public class CustomerTesting : MonoBehaviour, IInteractable
         if (direction.sqrMagnitude > 0.01f)
         {
             Quaternion targetRotation = Quaternion.LookRotation(direction);
-
             transform.rotation = Quaternion.Slerp(
                 transform.rotation,
                 targetRotation,
@@ -178,10 +178,7 @@ public class CustomerTesting : MonoBehaviour, IInteractable
 
         if (CustomerManager.Instance != null)
         {
-            CustomerManager.Instance.RegisterWaitingCustomer(
-                this,
-                _patience
-            );
+            CustomerManager.Instance.RegisterWaitingCustomer(this, _patience);
         }
     }
 
@@ -201,18 +198,12 @@ public class CustomerTesting : MonoBehaviour, IInteractable
     {
         _pendingOrder.Clear();
 
-        int itemCount = UnityEngine.Random.Range(
-            1,
-            Mathf.Max(1, maxItems) + 1
-        );
-
+        int itemCount = UnityEngine.Random.Range(1, Mathf.Max(1, maxItems) + 1);
         int colorCount = Enum.GetValues(typeof(SphereColor)).Length;
 
         for (int i = 0; i < itemCount; i++)
         {
-            _pendingOrder.Add(
-                (SphereColor)UnityEngine.Random.Range(0, colorCount)
-            );
+            _pendingOrder.Add((SphereColor)UnityEngine.Random.Range(0, colorCount));
         }
 
         if (_orderDisplay != null)
@@ -231,11 +222,8 @@ public class CustomerTesting : MonoBehaviour, IInteractable
     {
         if (_state == CustomerState.WaitingAtRegister)
         {
-            if (CustomerManager.Instance == null)
-                return;
-
-            if (!CustomerManager.Instance.CanServeAtRegister(this))
-                return;
+            if (CustomerManager.Instance == null) return;
+            if (!CustomerManager.Instance.CanServeAtRegister(this)) return;
 
             if (_orderDisplay != null)
             {
@@ -243,10 +231,16 @@ public class CustomerTesting : MonoBehaviour, IInteractable
             }
 
             CustomerManager.Instance.ServeAtRegister(this);
+
+            if (TutorialManager.Instance != null && TutorialManager.Instance.IsTutorialActive)
+            {
+                if (TutorialManager.Instance.CurrentStep == TutorialStep.TakeOrder)
+                {
+                    TutorialManager.Instance.CompleteStep(TutorialStep.TakeOrder);
+                }
+            }
             return;
         }
-
-        return;
     }
 
     public string GetInteractionText()
@@ -272,9 +266,7 @@ public class CustomerTesting : MonoBehaviour, IInteractable
                 return "Collecting order";
 
             case CustomerState.Leaving:
-                return _wasSatisfied
-                    ? "Satisfied customer"
-                    : "Angry customer";
+                return _wasSatisfied ? "Satisfied customer" : "Angry customer";
 
             default:
                 return "";

@@ -24,10 +24,31 @@ public class PlayerMovement : MonoBehaviour
 
     private void Update()
     {
-        if (GameManager.Instance == null || !GameManager.Instance.IsPlaying)
-        return;
-        
+        // Si no se cumplen las condiciones para mover al jugador, salimos
+        if (!CanMove()) return;
+
         Move();
+    }
+
+    private bool CanMove()
+    {
+        if (GameManager.Instance == null) return false;
+
+        // 1. Permite movimiento durante la partida normal
+        if (GameManager.Instance.IsPlaying) return true;
+
+        // 2. Permite movimiento durante el Tutorial (salvo en el mensaje inicial)
+        if (GameManager.Instance.CurrentState == GameState.Tutorial)
+        {
+            if (TutorialManager.Instance != null && TutorialManager.Instance.IsTutorialActive)
+            {
+                // Congela al personaje SOLO en el mensaje de Bienvenida
+                return TutorialManager.Instance.CurrentStep != TutorialStep.Welcome;
+            }
+            return true;
+        }
+
+        return false;
     }
 
     private void Move()

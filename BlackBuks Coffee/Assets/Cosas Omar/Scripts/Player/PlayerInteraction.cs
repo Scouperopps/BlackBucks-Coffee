@@ -9,8 +9,8 @@ public class PlayerInteraction : MonoBehaviour
 
     private void Update()
     {
-        if (GameManager.Instance == null || !GameManager.Instance.IsPlaying)
-        return;
+        if (!CanInteract())
+            return;
 
         DetectInteractable();
 
@@ -18,6 +18,14 @@ public class PlayerInteraction : MonoBehaviour
         {
             currentInteractable.Interact(GetComponent<PlayerInventory>());
         }
+    }
+
+    private bool CanInteract()
+    {
+        if (GameManager.Instance == null) return false;
+
+        // Permite la interacción en partida normal o durante el tutorial
+        return GameManager.Instance.IsPlaying || GameManager.Instance.CurrentState == GameState.Tutorial;
     }
 
     private void DetectInteractable()
@@ -33,7 +41,8 @@ public class PlayerInteraction : MonoBehaviour
 
         foreach (Collider collider in colliders)
         {
-            IInteractable interactable = collider.GetComponent<IInteractable>();
+            // GetComponentInParent asegura encontrar IInteractable aunque el collider esté en un objeto hijo
+            IInteractable interactable = collider.GetComponentInParent<IInteractable>();
 
             if (interactable == null)
                 continue;
@@ -53,6 +62,7 @@ public class PlayerInteraction : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
+        Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(
             transform.position,
             interactionRange

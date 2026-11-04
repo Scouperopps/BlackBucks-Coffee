@@ -129,7 +129,8 @@ public class GameManager : MonoBehaviour
 
     public void OpenTutorial()
     {
-        if (_currentState == GameState.MainMenu || _currentState == GameState.Paused)
+        // MEJORA: Agregado GameState.LevelSelection a la condición de origen
+        if (_currentState == GameState.MainMenu || _currentState == GameState.Paused || _currentState == GameState.LevelSelection)
         {
             _originState = _currentState;
         }

@@ -16,7 +16,7 @@ public class ColorBox : MonoBehaviour, IInteractable
     {
         if (playerInventory == null)
         {
-            Debug.LogError("No se encontr� PlayerInventory.");
+            Debug.LogError("No se encontró PlayerInventory.");
             return;
         }
 
@@ -25,6 +25,15 @@ public class ColorBox : MonoBehaviour, IInteractable
         if (sphereAdded)
         {
             Debug.Log("Esfera " + sphereColor + " recogida de la caja.");
+
+            // COMPLETA EL PASO DE PREPARACIÓN EN EL TUTORIAL
+            if (TutorialManager.Instance != null && TutorialManager.Instance.IsTutorialActive)
+            {
+                if (TutorialManager.Instance.CurrentStep == TutorialStep.PrepareCoffee)
+                {
+                    TutorialManager.Instance.CompleteStep(TutorialStep.PrepareCoffee);
+                }
+            }
         }
     }
 
