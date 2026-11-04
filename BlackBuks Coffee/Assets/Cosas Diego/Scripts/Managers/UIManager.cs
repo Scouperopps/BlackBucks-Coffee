@@ -5,6 +5,7 @@ public class UIManager : MonoBehaviour
     private static UIManager _instance;
     public static UIManager Instance => _instance;
 
+    [Header("Paneles Principales")]
     [SerializeField] private GameObject _mainMenuPanel;
     [SerializeField] private GameObject _levelSelectionPanel;
     [SerializeField] private GameObject _gameUIPanel;
@@ -14,16 +15,14 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameObject _victoryPanel;
     [SerializeField] private GameObject _defeatPanel;
 
+    [Header("Paneles Adicionales")]
+    [SerializeField] private GameObject _achievementsPanel;
+    [SerializeField] private GameObject _creditsPanel;
+
     private void Awake()
     {
-        if (_instance == null)
-        {
-            _instance = this;
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        if (_instance == null) _instance = this;
+        else Destroy(gameObject);
     }
 
     public void DisplayPanelByState(GameState state)
@@ -35,38 +34,40 @@ public class UIManager : MonoBehaviour
             case GameState.MainMenu:
                 if (_mainMenuPanel != null) _mainMenuPanel.SetActive(true);
                 break;
-
             case GameState.LevelSelection:
                 if (_levelSelectionPanel != null) _levelSelectionPanel.SetActive(true);
                 break;
-
             case GameState.Playing:
                 if (_gameUIPanel != null) _gameUIPanel.SetActive(true);
                 break;
-
             case GameState.Paused:
                 if (_gameUIPanel != null) _gameUIPanel.SetActive(true);
                 if (_pausePanel != null) _pausePanel.SetActive(true);
                 break;
-
             case GameState.Settings:
                 if (_settingsPanel != null) _settingsPanel.SetActive(true);
                 break;
-
             case GameState.Tutorial:
-                // Mantiene visible el HUD del juego mientras muestra la caja de instrucciones del tutorial
                 if (_gameUIPanel != null) _gameUIPanel.SetActive(true);
                 if (_tutorialPanel != null) _tutorialPanel.SetActive(true);
                 break;
-
             case GameState.Victory:
                 if (_victoryPanel != null) _victoryPanel.SetActive(true);
                 break;
-
             case GameState.Defeat:
                 if (_defeatPanel != null) _defeatPanel.SetActive(true);
                 break;
         }
+    }
+
+    public void ShowAchievementsPanel(bool show)
+    {
+        if (_achievementsPanel != null) _achievementsPanel.SetActive(show);
+    }
+
+    public void ShowCreditsPanel(bool show)
+    {
+        if (_creditsPanel != null) _creditsPanel.SetActive(show);
     }
 
     private void HideAllPanels()
@@ -79,5 +80,7 @@ public class UIManager : MonoBehaviour
         if (_tutorialPanel != null) _tutorialPanel.SetActive(false);
         if (_victoryPanel != null) _victoryPanel.SetActive(false);
         if (_defeatPanel != null) _defeatPanel.SetActive(false);
+        if (_achievementsPanel != null) _achievementsPanel.SetActive(false);
+        if (_creditsPanel != null) _creditsPanel.SetActive(false);
     }
 }

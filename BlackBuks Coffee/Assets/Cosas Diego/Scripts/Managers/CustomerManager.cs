@@ -1,4 +1,3 @@
-
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -32,14 +31,9 @@ public class CustomerManager : MonoBehaviour
     [SerializeField] private float _impatientThreshold = 0.5f;
     [SerializeField] private float _angryThreshold = 0.2f;
 
-    private readonly List<CustomerTesting> _registerQueue =
-        new List<CustomerTesting>();
-
-    private readonly List<CustomerTesting> _waitingCustomers =
-        new List<CustomerTesting>();
-
-    private readonly List<TrackedCustomer> _trackedCustomers =
-        new List<TrackedCustomer>();
+    private readonly List<CustomerTesting> _registerQueue = new List<CustomerTesting>();
+    private readonly List<CustomerTesting> _waitingCustomers = new List<CustomerTesting>();
+    private readonly List<TrackedCustomer> _trackedCustomers = new List<TrackedCustomer>();
 
     public static CustomerManager Instance { get; private set; }
 
@@ -73,9 +67,9 @@ public class CustomerManager : MonoBehaviour
 
     public bool CanServeAtRegister(CustomerTesting customer)
     {
-        return _registerQueue.Count > 0
-            && _registerQueue[0] == customer;
+        return _registerQueue.Count > 0 && _registerQueue[0] == customer;
     }
+
     public CustomerTesting GetFirstCustomerInQueue()
     {
         if (_registerQueue.Count > 0)
@@ -136,30 +130,12 @@ public class CustomerManager : MonoBehaviour
             UpdateWaitingPositions();
     }
 
-    /*public void RegisterWaitingCustomer(CustomerTesting customer, float basePatience)
-        {
-            if (customer == null)
-                return;
-
-            foreach (TrackedCustomer tracked in _trackedCustomers)
-            {
-                if (tracked.customer == customer)
-                    return;
-            }
-
-            int extraItems = Mathf.Max(0, customer.PendingOrder.Count - 1);
-            float totalPatience = basePatience + _extraTimePerItem * extraItems;
-
-            _trackedCustomers.Add(new TrackedCustomer
-            {
-                customer = customer,
-                remainingTime = totalPatience,
-                initialTime = Mathf.Max(0.01f, totalPatience)
-            });
-
-            customer.OnOrderCompleted += HandleOrderCompleted;
-            customer.OnCustomerLeft += HandleCustomerLeft;
-        }*/
+    // Compatibilidad para llamadas desde CustomerTesting.cs u otros scripts
+    public void RegisterWaitingCustomer(CustomerTesting customer, float basePatience)
+    {
+        StartTrackingCustomer(customer, basePatience);
+        RefreshCustomerPatience(customer, basePatience);
+    }
 
     public void StartTrackingCustomer(CustomerTesting customer, float basePatience)
     {
@@ -187,7 +163,6 @@ public class CustomerManager : MonoBehaviour
         {
             if (tracked.customer == customer)
             {
-                // Calcula el tiempo extra por cantidad de bebidas/items
                 int extraItems = Mathf.Max(0, customer.PendingOrder.Count - 1);
                 float totalPatience = basePatience + _extraTimePerItem * extraItems;
 
@@ -230,7 +205,7 @@ public class CustomerManager : MonoBehaviour
 
     private void Update()
     {
-        if (GameManager.Instance == null || !GameManager.Instance.IsPlaying)
+        if (!CanUpdateState())
             return;
 
         for (int i = _trackedCustomers.Count - 1; i >= 0; i--)
@@ -244,7 +219,7 @@ public class CustomerManager : MonoBehaviour
             }
 
             if (entry.customer.State != CustomerTesting.CustomerState.WaitingForOrder &&
-            entry.customer.State != CustomerTesting.CustomerState.WaitingAtRegister)
+                entry.customer.State != CustomerTesting.CustomerState.WaitingAtRegister)
                 continue;
 
             entry.remainingTime -= Time.deltaTime;
@@ -255,6 +230,12 @@ public class CustomerManager : MonoBehaviour
             if (entry.remainingTime <= 0f)
                 entry.customer.Leave(false);
         }
+    }
+
+    private bool CanUpdateState()
+    {
+        if (GameManager.Instance == null) return false;
+        return GameManager.Instance.IsPlaying || GameManager.Instance.CurrentState == GameState.Tutorial;
     }
 
     private CustomerMood GetMood(float ratio)
@@ -297,5 +278,21 @@ public class CustomerManager : MonoBehaviour
             if (_trackedCustomers[i].customer == customer)
                 _trackedCustomers.RemoveAt(i);
         }
+    }
+
+    public void ClearAllCustomers()
+    {
+        for (int i = _trackedCustomers.Count - 1; i >= 0; i--)
+        {
+            if (_trackedCustomers[i].customer != null)
+            {
+                _trackedCustomers[i].customer.OnOrderCompleted -= HandleOrderCompleted;
+                _trackedCustomers[i].customer.OnCustomerLeft -= HandleCustomerLeft;
+            }
+        }
+
+        _registerQueue.Clear();
+        _waitingCustomers.Clear();
+        _trackedCustomers.Clear();
     }
 }

@@ -17,6 +17,7 @@ public class GameManager : MonoBehaviour
         if (_instance == null)
         {
             _instance = this;
+            DontDestroyOnLoad(gameObject);
         }
         else
         {
@@ -26,6 +27,9 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
+        int activeSlot = PlayerPrefs.GetInt("ActiveSlot", 1);
+        SaveSystem.LoadSlot(activeSlot);
+
         SetGameState(GameState.MainMenu);
 
         if (ReputationManager.Instance != null)
@@ -51,131 +55,88 @@ public class GameManager : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            if (_currentState == GameState.Playing)
-            {
-                PauseGame();
-            }
-            else if (_currentState == GameState.Paused)
-            {
-                ResumeGame();
-            }
-            else if (_currentState == GameState.Settings)
-            {
-                CloseSettings();
-            }
-            else if (_currentState == GameState.Tutorial)
-            {
-                CloseTutorial();
-            }
-            else if (_currentState == GameState.LevelSelection)
-            {
-                CloseLevelSelection();
-            }
+            if (_currentState == GameState.Playing) PauseGame();
+            else if (_currentState == GameState.Paused) ResumeGame();
+            else if (_currentState == GameState.Settings) CloseSettings();
+            else if (_currentState == GameState.Tutorial) CloseTutorial();
+            else if (_currentState == GameState.LevelSelection) CloseLevelSelection();
         }
     }
 
     public void SetGameState(GameState newState)
     {
         _currentState = newState;
-
         if (UIManager.Instance != null)
         {
             UIManager.Instance.DisplayPanelByState(_currentState);
         }
     }
 
-    public void StartGame()
-    {
-        SetGameState(GameState.Playing);
-    }
-
-    public void PauseGame()
-    {
-        SetGameState(GameState.Paused);
-    }
-
-    public void ResumeGame()
-    {
-        SetGameState(GameState.Playing);
-    }
+    public void StartGame() => SetGameState(GameState.Playing);
+    public void PauseGame() => SetGameState(GameState.Paused);
+    public void ResumeGame() => SetGameState(GameState.Playing);
 
     public void OpenLevelSelection()
     {
         if (_currentState == GameState.MainMenu || _currentState == GameState.Paused)
-        {
             _originState = _currentState;
-        }
         SetGameState(GameState.LevelSelection);
     }
 
-    public void CloseLevelSelection()
-    {
-        SetGameState(_originState);
-    }
+    public void CloseLevelSelection() => SetGameState(_originState);
 
     public void OpenSettings()
     {
         if (_currentState == GameState.MainMenu || _currentState == GameState.Paused || _currentState == GameState.LevelSelection)
-        {
             _originState = _currentState;
-        }
         SetGameState(GameState.Settings);
     }
 
-    public void CloseSettings()
-    {
-        SetGameState(_originState);
-    }
+    public void CloseSettings() => SetGameState(_originState);
 
     public void OpenTutorial()
     {
-        // MEJORA: Agregado GameState.LevelSelection a la condición de origen
         if (_currentState == GameState.MainMenu || _currentState == GameState.Paused || _currentState == GameState.LevelSelection)
-        {
             _originState = _currentState;
-        }
         SetGameState(GameState.Tutorial);
     }
 
-    public void CloseTutorial()
-    {
-        SetGameState(_originState);
-    }
+    public void CloseTutorial() => SetGameState(_originState);
 
     public void TriggerVictory()
     {
         SetGameState(GameState.Victory);
+
+        if (LevelManager.Instance != null)
+        {
+            SaveSystem.UnlockNextLevel(LevelManager.Instance.SelectedLevelIndex);
+
+            if (AchievementManager.Instance != null)
+            {
+                AchievementManager.Instance.CheckLevelAchievements(LevelManager.Instance.SelectedLevelIndex);
+            }
+        }
     }
 
-    public void TriggerDefeat()
-    {
-        SetGameState(GameState.Defeat);
-    }
+    public void TriggerDefeat() => SetGameState(GameState.Defeat);
 
     public void EndGame(bool isVictory)
     {
-        if (isVictory)
-        {
-            TriggerVictory();
-        }
-        else
-        {
-            TriggerDefeat();
-        }
+        if (isVictory) TriggerVictory();
+        else TriggerDefeat();
     }
 
-    private void HandleReputationDepleted()
-    {
-        TriggerDefeat();
-    }
+    private void HandleReputationDepleted() => TriggerDefeat();
 
     public void RestartGame()
     {
+        SetGameState(GameState.Playing);
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
     public void ReturnToMainMenu()
     {
+        SetGameState(GameState.MainMenu);
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 

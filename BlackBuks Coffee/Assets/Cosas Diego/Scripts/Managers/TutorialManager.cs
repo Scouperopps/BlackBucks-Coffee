@@ -28,20 +28,13 @@ public class TutorialManager : MonoBehaviour
 
     private void Awake()
     {
-        if (_instance == null)
-        {
-            _instance = this;
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        if (_instance == null) _instance = this;
+        else Destroy(gameObject);
     }
 
     public void StartTutorialSequence()
     {
         Time.timeScale = 1f;
-
         if (GameManager.Instance != null)
         {
             GameManager.Instance.SetGameState(GameState.Tutorial);
@@ -58,22 +51,9 @@ public class TutorialManager : MonoBehaviour
 
         switch (_currentStep)
         {
-            case TutorialStep.Welcome:
-                break;
-
             case TutorialStep.MoveToRegister:
                 SpawnTutorialCustomer();
                 break;
-
-            case TutorialStep.TakeOrder:
-                break;
-
-            case TutorialStep.PrepareCoffee:
-                break;
-
-            case TutorialStep.ServeCustomer:
-                break;
-
             case TutorialStep.Completed:
                 if (_autoRedirectOnComplete)
                 {
@@ -85,10 +65,7 @@ public class TutorialManager : MonoBehaviour
 
     public void CompleteStep(TutorialStep completedStep)
     {
-        if (!_isTutorialActive || _currentStep != completedStep)
-        {
-            return;
-        }
+        if (!_isTutorialActive || _currentStep != completedStep) return;
 
         int nextStepIndex = (int)_currentStep + 1;
         SetStep((TutorialStep)nextStepIndex);
@@ -110,10 +87,7 @@ public class TutorialManager : MonoBehaviour
 
     private void SpawnTutorialCustomer()
     {
-        if (_tutorialCustomerPrefab == null || _spawnPoint == null)
-        {
-            return;
-        }
+        if (_tutorialCustomerPrefab == null || _spawnPoint == null) return;
 
         _activeTutorialCustomer = Instantiate(_tutorialCustomerPrefab, _spawnPoint.position, _spawnPoint.rotation);
         _activeTutorialCustomer.Init(_registerPoint, _exitPoint, 999f, 1);
