@@ -18,7 +18,7 @@ public class CustomerTesting : MonoBehaviour
     [SerializeField] private float _moveSpeed = 2f;
     [SerializeField] private Transform _exitPoint;
     [SerializeField] private CustomerOrderDisplay _orderDisplay;
-    
+
     [Header("Nombre del cliente")]
     [SerializeField]
     private string[] _customerNames =
@@ -39,13 +39,18 @@ public class CustomerTesting : MonoBehaviour
 
     [Header("Sistema de Puntos")]
     private float _currentScore = 80f;
-    private float _currentDecayRate = 0f; 
+    private float _currentDecayRate = 0f;
 
     public float CurrentScore => _currentScore;
 
     public void ModifyScore(float amount)
     {
         _currentScore = Mathf.Clamp(_currentScore + amount, 0f, 100f);
+
+        if (_orderDisplay != null)
+        {
+            _orderDisplay.UpdateStars(_currentScore);
+        }
     }
 
     public event Action<CustomerTesting, bool> OnCustomerLeft;
@@ -55,11 +60,7 @@ public class CustomerTesting : MonoBehaviour
     public CustomerState State => _state;
     public IReadOnlyList<SphereColor> PendingOrder => _pendingOrder;
 
-    public void Init(
-        Transform customerPoint,
-        Transform exitPoint,
-        float patience,
-        int maxItems)
+    public void Init(Transform customerPoint, Transform exitPoint, float patience, int maxItems)
     {
         _targetPosition = customerPoint != null
             ? customerPoint.position
@@ -72,6 +73,8 @@ public class CustomerTesting : MonoBehaviour
 
         GenerateOrder(maxItems);
         _state = CustomerState.MovingToPoint;
+
+        ModifyScore(0f);
     }
 
     public void SetTargetQueuePosition(Vector3 queuePosition)
@@ -127,6 +130,11 @@ public class CustomerTesting : MonoBehaviour
         {
             _currentScore -= _currentDecayRate * Time.deltaTime;
             _currentScore = Mathf.Max(0f, _currentScore); // Evitar puntaje negativo
+        }
+
+        if (_orderDisplay != null)
+        {
+            _orderDisplay.UpdateStars(_currentScore);
         }
 
         switch (_state)

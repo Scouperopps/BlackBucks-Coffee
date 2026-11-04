@@ -51,6 +51,10 @@ public class GameManager : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
+            // NUEVO: Evitar pausar el juego si se está cerrando el panel de entregas
+            if (DeliveryOrderUI.IsOpen)
+                return;
+
             if (_currentState == GameState.Playing)
             {
                 PauseGame();

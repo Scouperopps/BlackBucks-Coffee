@@ -97,6 +97,13 @@ public class DeliveryOrderUI : MonoBehaviour
         if (deliveryPanel == null || !deliveryPanel.activeSelf)
             return;
 
+        // NUEVO: Cerrar la ventana al presionar Escape
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            ClosePanel();
+            return;
+        }
+
         if (Input.GetKeyDown(KeyCode.Return) ||
             Input.GetKeyDown(KeyCode.KeypadEnter))
         {
