@@ -1,0 +1,10 @@
+Cozy Cat Cafe - Assets V2.2
+
+Update Notes:
+
+- New modular Counter with a sink module, drawers variant and corner pieces. Example counters included.
+  Modules snap to grid nicely.
+
+- New Trash bins and bin cupboards
+
+- Fixes for glTF exports being exported double
