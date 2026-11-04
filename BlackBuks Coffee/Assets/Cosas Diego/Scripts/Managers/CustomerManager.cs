@@ -76,6 +76,15 @@ public class CustomerManager : MonoBehaviour
         return _registerQueue.Count > 0
             && _registerQueue[0] == customer;
     }
+    public CustomerTesting GetFirstCustomerInQueue()
+    {
+        if (_registerQueue.Count > 0)
+        {
+            return _registerQueue[0];
+        }
+
+        return null;
+    }
 
     public void ServeAtRegister(CustomerTesting customer)
     {

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CustomerTesting : MonoBehaviour, IInteractable
+public class CustomerTesting : MonoBehaviour
 {
     public enum CustomerState
     {
@@ -218,7 +218,7 @@ public class CustomerTesting : MonoBehaviour, IInteractable
         _state = CustomerState.Leaving;
     }
 
-    public void Interact(PlayerInventory playerInventory)
+    /*public void Interact(PlayerInventory playerInventory)
     {
         if (_state == CustomerState.WaitingAtRegister)
         {
@@ -270,6 +270,29 @@ public class CustomerTesting : MonoBehaviour, IInteractable
 
             default:
                 return "";
+        }
+    }*/
+    public void TakeOrderFromRegister()
+    {
+        if (_state != CustomerState.WaitingAtRegister)
+            return;
+
+        if (_orderDisplay != null)
+        {
+            _orderDisplay.ShowCustomerName(_customerName);
+        }
+
+        if (CustomerManager.Instance != null)
+        {
+            CustomerManager.Instance.ServeAtRegister(this);
+        }
+
+        if (TutorialManager.Instance != null && TutorialManager.Instance.IsTutorialActive)
+        {
+            if (TutorialManager.Instance.CurrentStep == TutorialStep.TakeOrder)
+            {
+                TutorialManager.Instance.CompleteStep(TutorialStep.TakeOrder);
+            }
         }
     }
 }
