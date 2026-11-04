@@ -37,6 +37,17 @@ public class CustomerTesting : MonoBehaviour
     private bool _wasSatisfied;
     private float _patience;
 
+    [Header("Sistema de Puntos")]
+    private float _currentScore = 80f;
+    private float _currentDecayRate = 0f; 
+
+    public float CurrentScore => _currentScore;
+
+    public void ModifyScore(float amount)
+    {
+        _currentScore = Mathf.Clamp(_currentScore + amount, 0f, 100f);
+    }
+
     public event Action<CustomerTesting, bool> OnCustomerLeft;
     public event Action<CustomerTesting> OnOrderCompleted;
     public event Action<CustomerTesting> OnArrivedAtOrderTable;
@@ -112,6 +123,12 @@ public class CustomerTesting : MonoBehaviour
         if (!CanUpdateState())
             return;
 
+        if (_state == CustomerState.WaitingAtRegister || _state == CustomerState.WaitingForOrder)
+        {
+            _currentScore -= _currentDecayRate * Time.deltaTime;
+            _currentScore = Mathf.Max(0f, _currentScore); // Evitar puntaje negativo
+        }
+
         switch (_state)
         {
             case CustomerState.MovingToPoint:
@@ -170,16 +187,20 @@ public class CustomerTesting : MonoBehaviour
     private void OnArrivedAtRegister()
     {
         _state = CustomerState.WaitingAtRegister;
+
+        // Calcular pérdida proporcional: (Puntos actuales / Tiempo de paciencia)
+        _currentDecayRate = _currentScore / _patience;
+
+        if (CustomerManager.Instance != null)
+        {
+            CustomerManager.Instance.StartTrackingCustomer(this, _patience);
+        }
     }
 
     private void OnArrivedAtWaitingPoint()
     {
         _state = CustomerState.WaitingForOrder;
-
-        if (CustomerManager.Instance != null)
-        {
-            CustomerManager.Instance.RegisterWaitingCustomer(this, _patience);
-        }
+        // Eliminamos la llamada antigua al Manager, ya lo estamos trackeando
     }
 
     private void OnArrivedAtOrderTablePosition()
@@ -211,6 +232,13 @@ public class CustomerTesting : MonoBehaviour
     {
         _wasSatisfied = satisfied;
         _state = CustomerState.Leaving;
+
+        // Si se acaba el tiempo, enviar los puntos restantes a la suma global
+        if (!satisfied && ScoreManager.Instance != null)
+        {
+            ScoreManager.Instance.AddScore(_currentScore);
+            Debug.Log($"El cliente se fue sin orden. Se sumaron sus {_currentScore} puntos.");
+        }
     }
 
     /*public void Interact(PlayerInventory playerInventory)
@@ -271,6 +299,18 @@ public class CustomerTesting : MonoBehaviour
     {
         if (_state != CustomerState.WaitingAtRegister)
             return;
+
+        ModifyScore(30f);
+
+        if (CustomerManager.Instance != null)
+        {
+            CustomerManager.Instance.RefreshCustomerPatience(this, _patience);
+
+            // Recalcular la tasa de pérdida con los nuevos puntos y el nuevo tiempo
+            float extraTime = Mathf.Max(0, _pendingOrder.Count - 1) * 5f;
+            float newPatience = _patience + extraTime;
+            _currentDecayRate = _currentScore / newPatience;
+        }
 
         if (_orderDisplay != null)
         {

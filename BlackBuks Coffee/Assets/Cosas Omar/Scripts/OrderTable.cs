@@ -118,22 +118,20 @@ public class OrderTable : MonoBehaviour, IInteractable
             return false;
         }
 
-        CustomerTesting customer =
-            CustomerManager.Instance.FindWaitingCustomer(customerName);
+        CustomerTesting customer = CustomerManager.Instance.FindWaitingCustomer(customerName);
 
         if (customer == null)
         {
-            LastAssignmentMessage =
-                "No hay ningún cliente con ese nombre en espera.";
-
+            LastAssignmentMessage = "No hay ningún cliente con ese nombre en espera.";
             return false;
         }
+
+        // NUEVO: Validar si los colores entregados coinciden con los que pidió
+        bool isOrderCorrect = CheckIfOrderMatches(order.colors, customer.PendingOrder);
 
         // Asociar el pedido al cliente.
         order.customerName = customer.CustomerName;
 
-        // Escuchar el evento de llegada para retirar el pedido
-        // cuando el cliente alcance la mesa.
         System.Action<CustomerTesting> onArrived = null;
 
         onArrived = arrivedCustomer =>
@@ -141,22 +139,55 @@ public class OrderTable : MonoBehaviour, IInteractable
             arrivedCustomer.OnArrivedAtOrderTable -= onArrived;
             _storedOrders.Remove(order);
 
-            Debug.Log(
-                $"El cliente {arrivedCustomer.CustomerName} " +
-                "recogió su pedido."
-            );
+            // NUEVO: Aplicar bonificación o penalización
+            if (isOrderCorrect)
+            {
+                arrivedCustomer.ModifyScore(10f);
+                Debug.Log($"¡Bebida Correcta! +10 pts. Puntos finales del cliente: {arrivedCustomer.CurrentScore}");
+            }
+            else
+            {
+                arrivedCustomer.ModifyScore(-35f);
+                Debug.Log($"Bebida Incorrecta. -35 pts. Puntos finales del cliente: {arrivedCustomer.CurrentScore}");
+            }
+
+            // NUEVO: Enviar a la sumatoria global
+            if (ScoreManager.Instance != null)
+            {
+                ScoreManager.Instance.AddScore(arrivedCustomer.CurrentScore);
+            }
+
+            Debug.Log($"El cliente {arrivedCustomer.CustomerName} recogió su pedido.");
         };
 
         customer.OnArrivedAtOrderTable += onArrived;
 
-        // Retirar al cliente de la fila B y enviarlo a la mesa.
         CustomerManager.Instance.RemoveFromWaitingQueue(customer);
         customer.CallToOrderTable(transform);
 
-        LastAssignmentMessage =
-            $"Pedido asignado a {customer.CustomerName}.";
+        LastAssignmentMessage = $"Pedido asignado a {customer.CustomerName}.";
 
         Debug.Log(LastAssignmentMessage);
+        return true;
+    }
+
+    // NUEVO MÉTODO AUXILIAR: Compara las listas ignorando el orden de los elementos
+    private bool CheckIfOrderMatches(List<SphereColor> delivered, IReadOnlyList<SphereColor> requested)
+    {
+        if (delivered.Count != requested.Count) return false;
+
+        List<SphereColor> requestedCopy = new List<SphereColor>(requested);
+        foreach (SphereColor color in delivered)
+        {
+            if (requestedCopy.Contains(color))
+            {
+                requestedCopy.Remove(color);
+            }
+            else
+            {
+                return false;
+            }
+        }
         return true;
     }
 }

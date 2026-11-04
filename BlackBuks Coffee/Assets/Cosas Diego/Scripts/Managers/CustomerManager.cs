@@ -136,31 +136,66 @@ public class CustomerManager : MonoBehaviour
             UpdateWaitingPositions();
     }
 
-    public void RegisterWaitingCustomer(
-        CustomerTesting customer,
-        float basePatience)
+    /*public void RegisterWaitingCustomer(CustomerTesting customer, float basePatience)
+        {
+            if (customer == null)
+                return;
+
+            foreach (TrackedCustomer tracked in _trackedCustomers)
+            {
+                if (tracked.customer == customer)
+                    return;
+            }
+
+            int extraItems = Mathf.Max(0, customer.PendingOrder.Count - 1);
+            float totalPatience = basePatience + _extraTimePerItem * extraItems;
+
+            _trackedCustomers.Add(new TrackedCustomer
+            {
+                customer = customer,
+                remainingTime = totalPatience,
+                initialTime = Mathf.Max(0.01f, totalPatience)
+            });
+
+            customer.OnOrderCompleted += HandleOrderCompleted;
+            customer.OnCustomerLeft += HandleCustomerLeft;
+        }*/
+
+    public void StartTrackingCustomer(CustomerTesting customer, float basePatience)
     {
-        if (customer == null)
-            return;
+        if (customer == null) return;
 
         foreach (TrackedCustomer tracked in _trackedCustomers)
         {
-            if (tracked.customer == customer)
-                return;
+            if (tracked.customer == customer) return;
         }
-
-        int extraItems = Mathf.Max(0, customer.PendingOrder.Count - 1);
-        float totalPatience = basePatience + _extraTimePerItem * extraItems;
 
         _trackedCustomers.Add(new TrackedCustomer
         {
             customer = customer,
-            remainingTime = totalPatience,
-            initialTime = Mathf.Max(0.01f, totalPatience)
+            remainingTime = basePatience,
+            initialTime = Mathf.Max(0.01f, basePatience)
         });
 
         customer.OnOrderCompleted += HandleOrderCompleted;
         customer.OnCustomerLeft += HandleCustomerLeft;
+    }
+
+    public void RefreshCustomerPatience(CustomerTesting customer, float basePatience)
+    {
+        foreach (TrackedCustomer tracked in _trackedCustomers)
+        {
+            if (tracked.customer == customer)
+            {
+                // Calcula el tiempo extra por cantidad de bebidas/items
+                int extraItems = Mathf.Max(0, customer.PendingOrder.Count - 1);
+                float totalPatience = basePatience + _extraTimePerItem * extraItems;
+
+                tracked.remainingTime = totalPatience;
+                tracked.initialTime = Mathf.Max(0.01f, totalPatience);
+                return;
+            }
+        }
     }
 
     private void UpdateRegisterQueuePositions()
@@ -208,7 +243,8 @@ public class CustomerManager : MonoBehaviour
                 continue;
             }
 
-            if (entry.customer.State != CustomerTesting.CustomerState.WaitingForOrder)
+            if (entry.customer.State != CustomerTesting.CustomerState.WaitingForOrder &&
+            entry.customer.State != CustomerTesting.CustomerState.WaitingAtRegister)
                 continue;
 
             entry.remainingTime -= Time.deltaTime;
