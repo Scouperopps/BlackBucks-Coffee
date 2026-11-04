@@ -55,6 +55,7 @@ public class GameManager : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
+<<<<<<< Updated upstream
             // NUEVO: Evitar pausar el juego si se está cerrando el panel de entregas
             if (DeliveryOrderUI.IsOpen)
                 return;
@@ -79,6 +80,15 @@ public class GameManager : MonoBehaviour
             {
                 CloseLevelSelection();
             }
+=======
+            if (_currentState == GameState.Playing) PauseGame();
+            else if (_currentState == GameState.Paused) ResumeGame();
+            else if (_currentState == GameState.SaveMenu) CloseSaveMenu();
+            else if (_currentState == GameState.Settings) CloseSettings();
+            else if (_currentState == GameState.Tutorial) CloseTutorial();
+            else if (_currentState == GameState.LevelSelection) CloseLevelSelection();
+            else CloseAdditionalPanels(); // Cierra Logros o Créditos con ESC si están abiertos
+>>>>>>> Stashed changes
         }
     }
 
@@ -95,9 +105,18 @@ public class GameManager : MonoBehaviour
     public void PauseGame() => SetGameState(GameState.Paused);
     public void ResumeGame() => SetGameState(GameState.Playing);
 
+    public void OpenSaveMenu()
+    {
+        if (_currentState == GameState.MainMenu)
+            _originState = _currentState;
+        SetGameState(GameState.SaveMenu);
+    }
+
+    public void CloseSaveMenu() => SetGameState(_originState);
+
     public void OpenLevelSelection()
     {
-        if (_currentState == GameState.MainMenu || _currentState == GameState.Paused)
+        if (_currentState == GameState.MainMenu || _currentState == GameState.Paused || _currentState == GameState.SaveMenu)
             _originState = _currentState;
         SetGameState(GameState.LevelSelection);
     }
@@ -106,7 +125,7 @@ public class GameManager : MonoBehaviour
 
     public void OpenSettings()
     {
-        if (_currentState == GameState.MainMenu || _currentState == GameState.Paused || _currentState == GameState.LevelSelection)
+        if (_currentState == GameState.MainMenu || _currentState == GameState.Paused || _currentState == GameState.LevelSelection || _currentState == GameState.SaveMenu)
             _originState = _currentState;
         SetGameState(GameState.Settings);
     }
@@ -115,13 +134,41 @@ public class GameManager : MonoBehaviour
 
     public void OpenTutorial()
     {
-        if (_currentState == GameState.MainMenu || _currentState == GameState.Paused || _currentState == GameState.LevelSelection)
+        if (_currentState == GameState.MainMenu || _currentState == GameState.Paused || _currentState == GameState.LevelSelection || _currentState == GameState.SaveMenu)
             _originState = _currentState;
         SetGameState(GameState.Tutorial);
     }
 
     public void CloseTutorial() => SetGameState(_originState);
 
+    // --- MÉTODOS PARA LOGROS Y CRÉDITOS ---
+    public void OpenAchievements()
+    {
+        if (UIManager.Instance != null) UIManager.Instance.ShowAchievementsPanel(true);
+    }
+
+    public void CloseAchievements()
+    {
+        if (UIManager.Instance != null) UIManager.Instance.ShowAchievementsPanel(false);
+    }
+
+    public void OpenCredits()
+    {
+        if (UIManager.Instance != null) UIManager.Instance.ShowCreditsPanel(true);
+    }
+
+    public void CloseCredits()
+    {
+        if (UIManager.Instance != null) UIManager.Instance.ShowCreditsPanel(false);
+    }
+
+    private void CloseAdditionalPanels()
+    {
+        CloseAchievements();
+        CloseCredits();
+    }
+
+    // --- CONDICIONES DE VICTORIA / DERROTA Y ESCENA ---
     public void TriggerVictory()
     {
         SetGameState(GameState.Victory);

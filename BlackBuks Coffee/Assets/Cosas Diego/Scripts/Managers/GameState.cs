@@ -1,6 +1,7 @@
 public enum GameState
 {
     MainMenu,
+    SaveMenu,
     LevelSelection,
     Playing,
     Paused,

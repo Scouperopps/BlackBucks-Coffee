@@ -7,6 +7,7 @@ public class UIManager : MonoBehaviour
 
     [Header("Paneles Principales")]
     [SerializeField] private GameObject _mainMenuPanel;
+    [SerializeField] private GameObject _saveMenuPanel;
     [SerializeField] private GameObject _levelSelectionPanel;
     [SerializeField] private GameObject _gameUIPanel;
     [SerializeField] private GameObject _pausePanel;
@@ -34,26 +35,37 @@ public class UIManager : MonoBehaviour
             case GameState.MainMenu:
                 if (_mainMenuPanel != null) _mainMenuPanel.SetActive(true);
                 break;
+
+            case GameState.SaveMenu:
+                if (_saveMenuPanel != null) _saveMenuPanel.SetActive(true);
+                break;
+
             case GameState.LevelSelection:
                 if (_levelSelectionPanel != null) _levelSelectionPanel.SetActive(true);
                 break;
+
             case GameState.Playing:
                 if (_gameUIPanel != null) _gameUIPanel.SetActive(true);
                 break;
+
             case GameState.Paused:
                 if (_gameUIPanel != null) _gameUIPanel.SetActive(true);
                 if (_pausePanel != null) _pausePanel.SetActive(true);
                 break;
+
             case GameState.Settings:
                 if (_settingsPanel != null) _settingsPanel.SetActive(true);
                 break;
+
             case GameState.Tutorial:
                 if (_gameUIPanel != null) _gameUIPanel.SetActive(true);
                 if (_tutorialPanel != null) _tutorialPanel.SetActive(true);
                 break;
+
             case GameState.Victory:
                 if (_victoryPanel != null) _victoryPanel.SetActive(true);
                 break;
+
             case GameState.Defeat:
                 if (_defeatPanel != null) _defeatPanel.SetActive(true);
                 break;
@@ -70,9 +82,15 @@ public class UIManager : MonoBehaviour
         if (_creditsPanel != null) _creditsPanel.SetActive(show);
     }
 
+    public void ShowSaveMenuPanel(bool show)
+    {
+        if (_saveMenuPanel != null) _saveMenuPanel.SetActive(show);
+    }
+
     private void HideAllPanels()
     {
         if (_mainMenuPanel != null) _mainMenuPanel.SetActive(false);
+        if (_saveMenuPanel != null) _saveMenuPanel.SetActive(false);
         if (_levelSelectionPanel != null) _levelSelectionPanel.SetActive(false);
         if (_gameUIPanel != null) _gameUIPanel.SetActive(false);
         if (_pausePanel != null) _pausePanel.SetActive(false);

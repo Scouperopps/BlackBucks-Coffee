@@ -1,19 +1,18 @@
-using System;
-using System.Collections.Generic;
-
-[Serializable]
+[System.Serializable]
 public class SaveData
 {
     public int slotId = 1;
-    public int highestUnlockedLevel = 1; // 0 = Tutorial, 1 = Nivel 1, 2 = Nivel 2, 3 = Nivel 3
-    public List<string> unlockedAchievements = new List<string>();
-    public string lastSavedDate;
+    public int highestUnlockedLevel = 1;
+    public System.Collections.Generic.List<string> unlockedAchievements = new System.Collections.Generic.List<string>();
+    public int colorblindMode = 0;
+    public string lastSavedDate; // <-- Debe estar presente aquí
 
     public SaveData(int slot)
     {
         slotId = slot;
         highestUnlockedLevel = 1;
-        unlockedAchievements = new List<string>();
-        lastSavedDate = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
+        unlockedAchievements = new System.Collections.Generic.List<string>();
+        colorblindMode = 0;
+        lastSavedDate = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm");
     }
 }
