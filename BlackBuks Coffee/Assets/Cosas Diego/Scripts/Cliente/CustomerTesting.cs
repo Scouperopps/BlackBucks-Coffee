@@ -205,11 +205,6 @@ public class CustomerTesting : MonoBehaviour
         {
             _pendingOrder.Add((SphereColor)UnityEngine.Random.Range(0, colorCount));
         }
-
-        if (_orderDisplay != null)
-        {
-            _orderDisplay.ShowOrder(_pendingOrder);
-        }
     }
 
     public void Leave(bool satisfied)
@@ -280,6 +275,7 @@ public class CustomerTesting : MonoBehaviour
         if (_orderDisplay != null)
         {
             _orderDisplay.ShowCustomerName(_customerName);
+            _orderDisplay.ShowOrder(_pendingOrder);
         }
 
         if (CustomerManager.Instance != null)

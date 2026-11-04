@@ -32,6 +32,9 @@ public class PlayerMovement : MonoBehaviour
 
     private bool CanMove()
     {
+        // NUEVO: Si la interfaz de entrega está abierta, el jugador no se mueve.
+        if (DeliveryOrderUI.IsOpen) return false;
+
         if (GameManager.Instance == null) return false;
 
         // 1. Permite movimiento durante la partida normal

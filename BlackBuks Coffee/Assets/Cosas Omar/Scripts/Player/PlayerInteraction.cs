@@ -22,6 +22,9 @@ public class PlayerInteraction : MonoBehaviour
 
     private bool CanInteract()
     {
+        // NUEVO: Si la interfaz de entrega está abierta, no se puede interactuar con nada.
+        if (DeliveryOrderUI.IsOpen) return false;
+
         if (GameManager.Instance == null) return false;
 
         // Permite la interacción en partida normal o durante el tutorial

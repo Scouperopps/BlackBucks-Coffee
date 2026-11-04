@@ -14,6 +14,7 @@ public class DeliveryOrderUI : MonoBehaviour
 
     private OrderTable _currentTable;
     private OrderTable.StoredOrder _currentOrder;
+    public static bool IsOpen { get; private set; }
 
     private void Awake()
     {
@@ -32,6 +33,8 @@ public class DeliveryOrderUI : MonoBehaviour
 
     private void OnDestroy()
     {
+        IsOpen = false;
+
         if (confirmButton != null)
             confirmButton.onClick.RemoveListener(ConfirmOrder);
 
@@ -42,9 +45,7 @@ public class DeliveryOrderUI : MonoBehaviour
         }
     }
 
-    public void OpenForOrder(
-        OrderTable table,
-        OrderTable.StoredOrder order)
+    public void OpenForOrder(OrderTable table, OrderTable.StoredOrder order)
     {
         if (deliveryPanel == null || table == null || order == null)
             return;
@@ -53,6 +54,7 @@ public class DeliveryOrderUI : MonoBehaviour
         _currentOrder = order;
 
         deliveryPanel.SetActive(true);
+        IsOpen = true;
 
         if (customerNameInput != null)
         {
@@ -70,6 +72,7 @@ public class DeliveryOrderUI : MonoBehaviour
         if (deliveryPanel != null)
             deliveryPanel.SetActive(false);
 
+        IsOpen = false;
         _currentTable = null;
         _currentOrder = null;
     }
