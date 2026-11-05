@@ -16,6 +16,8 @@ public class DeliveryOrderUI : MonoBehaviour
     private OrderTable.StoredOrder _currentOrder;
     public static bool IsOpen { get; private set; }
 
+    public static int LastFrameClosed { get; private set; }
+
     private void Awake()
     {
         if (deliveryPanel != null)
@@ -68,14 +70,16 @@ public class DeliveryOrderUI : MonoBehaviour
     }
 
     public void ClosePanel()
-    {
-        if (deliveryPanel != null)
-            deliveryPanel.SetActive(false);
+{
+    if (deliveryPanel != null)
+        deliveryPanel.SetActive(false);
 
-        IsOpen = false;
-        _currentTable = null;
-        _currentOrder = null;
-    }
+    LastFrameClosed = Time.frameCount;
+    IsOpen = false;
+
+    _currentTable = null;
+    _currentOrder = null;
+}
 
     private void UpdateNamePreview(string enteredName)
     {
@@ -119,7 +123,7 @@ public class DeliveryOrderUI : MonoBehaviour
         if (_currentTable == null || _currentOrder == null)
         {
             if (statusText != null)
-                statusText.text = "No hay ningún pedido seleccionado.";
+                statusText.text = "No hay ningï¿½n pedido seleccionado.";
 
             return;
         }

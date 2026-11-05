@@ -56,8 +56,8 @@ public class GameManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             // Agregado por tu compañero: Evitar pausar si se está interactuando con las entregas
-            if (DeliveryOrderUI.IsOpen)
-                return;
+           if (DeliveryOrderUI.IsOpen || DeliveryOrderUI.LastFrameClosed == Time.frameCount) 
+            return;
 
             if (_currentState == GameState.Playing)
             {

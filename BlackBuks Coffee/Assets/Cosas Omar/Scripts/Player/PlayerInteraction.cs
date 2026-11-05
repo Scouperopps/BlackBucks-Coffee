@@ -21,6 +21,8 @@ public class PlayerInteraction : MonoBehaviour
 
     private bool CanInteract()
     {
+        if(DeliveryOrderUI.IsOpen) return false;
+
         if (GameManager.Instance == null) return false;
         return GameManager.Instance.IsPlaying || GameManager.Instance.CurrentState == GameState.Tutorial;
     }
