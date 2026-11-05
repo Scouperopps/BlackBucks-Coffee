@@ -345,6 +345,8 @@ MeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -366,9 +368,11 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!136 &2662952202269638517
 CapsuleCollider:
@@ -467,9 +471,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _orderContainer: {fileID: 2543920242397369081}
   _colorIconPrefab: {fileID: 1863046331890592962, guid: 202f3266a8df6844d9c14eb76e2c31a3, type: 3}
-  _redColor: {r: 1, g: 0, b: 0, a: 1}
-  _blueColor: {r: 0, g: 0, b: 1, a: 1}
-  _greenColor: {r: 0, g: 1, b: 0, a: 1}
+  _coffeeSprite: {fileID: 298495687, guid: daf985aacf2fa6f4090cf4a1173e030b, type: 3}
+  _milkshakeSprite: {fileID: -541125560, guid: 965820679ff179647b5cbbe1e9955c8e, type: 3}
+  _cupcakeSprite: {fileID: -747577854, guid: 57f88e93c5cf0834499b20a3016e2ab3, type: 3}
   _customerNameText: {fileID: 9202402450605665498}
   _starIcons:
   - {fileID: 7149525590147875830}
