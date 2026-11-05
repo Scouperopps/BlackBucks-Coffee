@@ -9,30 +9,49 @@ public class CustomerOrderDisplay : MonoBehaviour
     [Header("Pedido")]
     [SerializeField] private Transform _orderContainer;
     [SerializeField] private GameObject _colorIconPrefab;
-    [SerializeField] private Color _redColor = Color.red;
-    [SerializeField] private Color _blueColor = Color.blue;
-    [SerializeField] private Color _greenColor = Color.green;
+    [Header("Sprites de los Pedidos")]
+    [SerializeField] private Sprite _coffeeSprite;    // Representa el Rojo
+    [SerializeField] private Sprite _milkshakeSprite; // Representa el Azul
+    [SerializeField] private Sprite _cupcakeSprite;   // Representa el Verde
 
     [Header("Nombre del cliente")]
     [SerializeField] private TextMeshProUGUI _customerNameText;
-    [Header("Estrellas de Puntuación")]
+    [Header("Estrellas de Puntuaciï¿½n")]
     [SerializeField] private GameObject[] _starIcons;
 
     public void ShowOrder(IReadOnlyList<SphereColor> order)
+{
+    // 1. Limpiar iconos anteriores
+    foreach (Transform child in _orderContainer)
     {
-        ClearOrder();
+        Destroy(child.gameObject);
+    }
 
-        foreach (SphereColor color in order)
+    // 2. Crear los nuevos iconos con los sprites correspondientes
+    foreach (SphereColor color in order)
+    {
+        GameObject iconObj = Instantiate(_colorIconPrefab, _orderContainer);
+        
+        // IMPORTANTE: AsegÃºrate de que el componente sea UnityEngine.UI.Image
+        UnityEngine.UI.Image iconImage = iconObj.GetComponent<UnityEngine.UI.Image>();
+
+        // Restablecer el color a blanco para que el sprite no se tiÃ±a de gris o negro
+        iconImage.color = Color.white; 
+
+        switch (color)
         {
-            GameObject icon = Instantiate(_colorIconPrefab, _orderContainer);
-            Image image = icon.GetComponent<Image>();
-
-            if (image != null)
-            {
-                image.color = GetColor(color);
-            }
+            case SphereColor.Red:
+                iconImage.sprite = _coffeeSprite;
+                break;
+            case SphereColor.Blue:
+                iconImage.sprite = _milkshakeSprite;
+                break;
+            case SphereColor.Green:
+                iconImage.sprite = _cupcakeSprite;
+                break;
         }
     }
+}
 
     public void ShowCustomerName(string customerName)
     {
@@ -41,24 +60,6 @@ public class CustomerOrderDisplay : MonoBehaviour
 
         _customerNameText.text = customerName;
         _customerNameText.gameObject.SetActive(true);
-    }
-
-    private Color GetColor(SphereColor color)
-    {
-        switch (color)
-        {
-            case SphereColor.Red:
-                return _redColor;
-
-            case SphereColor.Blue:
-                return _blueColor;
-
-            case SphereColor.Green:
-                return _greenColor;
-
-            default:
-                return Color.white;
-        }
     }
 
     private void ClearOrder()
@@ -79,7 +80,7 @@ public class CustomerOrderDisplay : MonoBehaviour
         else if (score >= 61f) activeStars = 4;
         else if (score >= 41f) activeStars = 3;
         else if (score >= 21f) activeStars = 2;
-        else activeStars = 1; // De 0 a 20 siempre tendrá 1 estrella visible
+        else activeStars = 1; // De 0 a 20 siempre tendrï¿½ 1 estrella visible
 
         if (_starIcons != null)
         {
@@ -87,7 +88,7 @@ public class CustomerOrderDisplay : MonoBehaviour
             {
                 if (_starIcons[i] != null)
                 {
-                    // Enciende la estrella si su índice es menor a las estrellas activas (0 a 4)
+                    // Enciende la estrella si su ï¿½ndice es menor a las estrellas activas (0 a 4)
                     _starIcons[i].SetActive(i < activeStars);
                 }
             }
