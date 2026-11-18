@@ -31,9 +31,15 @@ public class AchievementUI : MonoBehaviour
             Image iconImage = item.transform.Find("Icon")?.GetComponent<Image>();
             CanvasGroup canvasGroup = item.GetComponent<CanvasGroup>();
 
-            if (titleText != null) titleText.text = achievement.title;
-            if (descText != null) descText.text = achievement.description;
-            if (iconImage != null && achievement.icon != null) iconImage.sprite = achievement.icon;
+            // Si tu script del CSV usa otro nombre en lugar de LocalizationManager.Instance.GetText, cámbialo aquí:
+            if (titleText != null)
+                titleText.text = LocalizationManager.Instance.GetText(achievement.titleKey);
+
+            if (descText != null)
+                descText.text = LocalizationManager.Instance.GetText(achievement.descriptionKey);
+
+            if (iconImage != null && achievement.icon != null)
+                iconImage.sprite = achievement.icon;
 
             if (canvasGroup != null)
             {

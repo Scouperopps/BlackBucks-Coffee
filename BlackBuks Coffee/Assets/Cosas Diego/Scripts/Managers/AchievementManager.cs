@@ -6,8 +6,8 @@ using UnityEngine;
 public class AchievementData
 {
     public string id;
-    public string title;
-    public string description;
+    public string titleKey;       
+    public string descriptionKey; 
     public Sprite icon;
 }
 

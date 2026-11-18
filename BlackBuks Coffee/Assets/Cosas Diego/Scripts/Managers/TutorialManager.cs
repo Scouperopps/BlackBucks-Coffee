@@ -16,6 +16,26 @@ public class TutorialManager : MonoBehaviour
     [SerializeField] private bool _autoRedirectOnComplete = false;
     [SerializeField] private float _autoRedirectDelay = 3.5f;
 
+    private readonly string[] _stepLocalizationKeys = new string[]
+    {
+        "btn_tutorial_welcome",
+        "btn_tutorial_move",     
+        "btn_tutorial_order",    
+        "btn_tutorial_prepare",
+        "btn_tutorial_serve",    
+        "btn_tutorial_complete"  
+    };
+
+    public string GetStepLocalizationKey(TutorialStep step)
+    {
+        int index = (int)step;
+        if (index >= 0 && index < _stepLocalizationKeys.Length)
+        {
+            return _stepLocalizationKeys[index];
+        }
+        return string.Empty;
+    }
+
     private TutorialStep _currentStep = TutorialStep.Welcome;
     private CustomerTesting _activeTutorialCustomer;
     private bool _isTutorialActive;

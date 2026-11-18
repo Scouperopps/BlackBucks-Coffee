@@ -8,23 +8,20 @@ public class TutorialUI : MonoBehaviour
     [SerializeField] private Button _nextButton;
     [SerializeField] private Button _skipButton;
 
-// En TutorialUI.cs
     private void OnEnable()
     {
         if (TutorialManager.Instance != null)
         {
             TutorialManager.Instance.OnTutorialStepChanged += UpdateTutorialUI;
-            
-            // CORRECCIÓN: Actualiza el texto inmediatamente con el paso actual
             UpdateTutorialUI(TutorialManager.Instance.CurrentStep);
         }
-    
+
         if (_nextButton != null)
         {
             _nextButton.onClick.RemoveAllListeners();
             _nextButton.onClick.AddListener(OnNextButtonClicked);
         }
-    
+
         if (_skipButton != null)
         {
             _skipButton.onClick.RemoveAllListeners();
@@ -44,33 +41,34 @@ public class TutorialUI : MonoBehaviour
     {
         if (_nextButton != null)
         {
-            _nextButton.gameObject.SetActive(currentStep == TutorialStep.Welcome);
+            bool showNext = currentStep == TutorialStep.Welcome || currentStep == TutorialStep.Completed;
+            _nextButton.gameObject.SetActive(showNext);
         }
 
         switch (currentStep)
         {
             case TutorialStep.Welcome:
-                SetInstruction("btn_tutorial_welcome", "¡Bienvenido a BlackBkus Coffee! Presiona Continuar para aprender las mecánicas básicas.");
+                SetInstruction("btn_tutorial_welcome", "¡Bienvenido a BlackBuks Coffee! Presiona Continuar para aprender cómo atender la cafetería.");
                 break;
 
             case TutorialStep.MoveToRegister:
-                SetInstruction("btn_tutorial_move", "Usa WASD o las Flechas para moverte hacia la caja registradora.");
+                SetInstruction("btn_tutorial_move", "Usa WASD o las Flechas para acercarte a la caja registradora en el mostrador central.");
                 break;
 
             case TutorialStep.TakeOrder:
-                SetInstruction("btn_tutorial_order", "Acércate al cliente en la caja y presiona E para tomar su orden.");
+                SetInstruction("btn_tutorial_order", "Párate frente a la caja registradora y presiona E para interactuar con el cliente y tomar su orden.");
                 break;
 
             case TutorialStep.PrepareCoffee:
-                SetInstruction("btn_tutorial_prepare", "Ve a la máquina de café y presiona E para preparar la bebida solicitada.");
+                SetInstruction("btn_tutorial_prepare", "Toma los productos del pedido con E: las tazas en el mostrador central, o los vasos azules y los muffins en la barra izquierda.");
                 break;
 
             case TutorialStep.ServeCustomer:
-                SetInstruction("btn_tutorial_serve", "Regresa con el cliente y presiona E para entregarle su pedido.");
+                SetInstruction("btn_tutorial_serve", "Acércate al área de entregas en el mostrador, presiona E para escribir el nombre del cliente y entrega su pedido.");
                 break;
 
             case TutorialStep.Completed:
-                SetInstruction("btn_tutorial_complete", "¡Excelente trabajo! Has aprendido lo básico.");
+                SetInstruction("btn_tutorial_complete", "¡Excelente trabajo! Ya dominas lo básico de BlackBuks Coffee.");
                 break;
         }
     }
@@ -91,9 +89,9 @@ public class TutorialUI : MonoBehaviour
 
     private void OnNextButtonClicked()
     {
-        if (TutorialManager.Instance != null && TutorialManager.Instance.CurrentStep == TutorialStep.Welcome)
+        if (TutorialManager.Instance != null)
         {
-            TutorialManager.Instance.CompleteStep(TutorialStep.Welcome);
+            TutorialManager.Instance.OnNextButtonClicked();
         }
     }
 
