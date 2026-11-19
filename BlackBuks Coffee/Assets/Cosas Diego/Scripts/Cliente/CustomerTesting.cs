@@ -227,12 +227,77 @@ public class CustomerTesting : MonoBehaviour
     {
         _pendingOrder.Clear();
 
-        int itemCount = UnityEngine.Random.Range(1, Mathf.Max(1, maxItems) + 1);
-        int colorCount = Enum.GetValues(typeof(SphereColor)).Length;
-
-        for (int i = 0; i < itemCount; i++)
+        switch (_customerName)
         {
-            _pendingOrder.Add((SphereColor)UnityEngine.Random.Range(0, colorCount));
+            case "Michelle":
+                // Un café y un panqué
+                _pendingOrder.Add(SphereColor.Red);
+                _pendingOrder.Add(SphereColor.Green);
+                break;
+
+            case "Diego":
+                // Solo una malteada
+                _pendingOrder.Add(SphereColor.Blue);
+                break;
+
+            case "Daniel":
+                // Solo un café
+                _pendingOrder.Add(SphereColor.Red);
+                break;
+
+            case "Omar":
+                // Café y malteada
+                _pendingOrder.Add(SphereColor.Red);
+                _pendingOrder.Add(SphereColor.Blue);
+                break;
+
+            case "Valentina":
+                // Malteada y panqué
+                _pendingOrder.Add(SphereColor.Blue);
+                _pendingOrder.Add(SphereColor.Green);
+                break;
+
+            case "Carlos":
+                // Dos cafés
+                _pendingOrder.Add(SphereColor.Red);
+                _pendingOrder.Add(SphereColor.Red);
+                break;
+
+            case "Aime":
+                // Solo un panqué
+                _pendingOrder.Add(SphereColor.Green);
+                break;
+
+            case "Mateo":
+                // Café, malteada y panqué (pedido completo)
+                _pendingOrder.Add(SphereColor.Red);
+                _pendingOrder.Add(SphereColor.Blue);
+                _pendingOrder.Add(SphereColor.Green);
+                break;
+
+            case "Elena":
+                // Dos malteadas
+                _pendingOrder.Add(SphereColor.Blue);
+                _pendingOrder.Add(SphereColor.Blue);
+                break;
+
+            case "Andres":
+                // Dos cafés y un panqué
+                _pendingOrder.Add(SphereColor.Red);
+                _pendingOrder.Add(SphereColor.Red);
+                _pendingOrder.Add(SphereColor.Green);
+                break;
+
+            default:
+                // Respaldo aleatorio en caso de que se añada un nombre nuevo en el Inspector
+                int itemCount = UnityEngine.Random.Range(1, Mathf.Max(1, maxItems) + 1);
+                int colorCount = Enum.GetValues(typeof(SphereColor)).Length;
+
+                for (int i = 0; i < itemCount; i++)
+                {
+                    _pendingOrder.Add((SphereColor)UnityEngine.Random.Range(0, colorCount));
+                }
+                break;
         }
     }
 

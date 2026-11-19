@@ -13,7 +13,9 @@ public class PlayerInteraction : MonoBehaviour
 
         DetectInteractable();
 
-        if (currentInteractable != null && Input.GetKeyDown(KeyCode.E))
+        bool interactPressed = Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.JoystickButton0);
+
+        if (currentInteractable != null && interactPressed)
         {
             currentInteractable.Interact(GetComponent<PlayerInventory>());
         }

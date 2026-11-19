@@ -53,21 +53,33 @@ public class GameManager : MonoBehaviour
 
     private void HandlePauseInput()
     {
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            // Agregado por tu compañero: Evitar pausar si se está interactuando con las entregas
-           if (DeliveryOrderUI.IsOpen || DeliveryOrderUI.LastFrameClosed == Time.frameCount) 
+        bool startPressed = Input.GetKeyDown(KeyCode.JoystickButton7);
+        bool backPressed = Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.JoystickButton1);
+
+        if (!startPressed && !backPressed)
             return;
 
-            if (_currentState == GameState.Playing)
+        // Evitar pausar o retroceder si se está interactuando con las entregas o se acaba de cerrar en este frame
+        if (DeliveryOrderUI.IsOpen || DeliveryOrderUI.LastFrameClosed == Time.frameCount)
+            return;
+
+        if (_currentState == GameState.Playing)
+        {
+            // En partida, tanto Escape como Start abren la pausa (B no pausa el juego)
+            if (Input.GetKeyDown(KeyCode.Escape) || startPressed)
             {
                 PauseGame();
             }
-            else if (_currentState == GameState.Paused)
-            {
-                ResumeGame();
-            }
-            else if (_currentState == GameState.SaveMenu)
+        }
+        else if (_currentState == GameState.Paused)
+        {
+            // En pausa, Start, B o Escape reanudan la partida
+            ResumeGame();
+        }
+        else if (backPressed)
+        {
+            // En cualquier submenú, Escape o B regresan al estado anterior
+            if (_currentState == GameState.SaveMenu)
             {
                 CloseSaveMenu();
             }
