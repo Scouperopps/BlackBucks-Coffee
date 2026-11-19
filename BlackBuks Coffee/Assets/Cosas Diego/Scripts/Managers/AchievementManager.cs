@@ -18,6 +18,8 @@ public class AchievementManager : MonoBehaviour
     [SerializeField] private List<AchievementData> _achievements = new List<AchievementData>();
     public List<AchievementData> Achievements => _achievements;
 
+    public event Action<AchievementData> OnAchievementUnlocked;
+
     private void Awake()
     {
         if (Instance == null)
@@ -40,9 +42,15 @@ public class AchievementManager : MonoBehaviour
     public void UnlockAchievement(string id)
     {
         if (IsAchievementUnlocked(id)) return;
-
-        SaveSystem.CurrentData.unlockedAchievements.Add(id);
-        SaveSystem.SaveCurrentSlot();
+        
+            SaveSystem.CurrentData.unlockedAchievements.Add(id);
+            SaveSystem.SaveCurrentSlot();
+        
+            AchievementData unlockedData = _achievements.Find(a => a.id == id);
+            if (unlockedData != null)
+            {
+                OnAchievementUnlocked?.Invoke(unlockedData);
+            }
     }
 
     public void CheckLevelAchievements(int levelIndex)

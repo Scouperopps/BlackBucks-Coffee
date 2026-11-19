@@ -29,9 +29,9 @@ public class AchievementUI : MonoBehaviour
             TMP_Text titleText = item.transform.Find("Title")?.GetComponent<TMP_Text>();
             TMP_Text descText = item.transform.Find("Description")?.GetComponent<TMP_Text>();
             Image iconImage = item.transform.Find("Icon")?.GetComponent<Image>();
+            Transform checkmark = item.transform.Find("Checkmark");
             CanvasGroup canvasGroup = item.GetComponent<CanvasGroup>();
 
-            // Si tu script del CSV usa otro nombre en lugar de LocalizationManager.Instance.GetText, cámbialo aquí:
             if (titleText != null)
                 titleText.text = LocalizationManager.Instance.GetText(achievement.titleKey);
 
@@ -41,10 +41,12 @@ public class AchievementUI : MonoBehaviour
             if (iconImage != null && achievement.icon != null)
                 iconImage.sprite = achievement.icon;
 
+            // Activa o desactiva la palomita según si ya se consiguió el logro
+            if (checkmark != null)
+                checkmark.gameObject.SetActive(unlocked);
+
             if (canvasGroup != null)
-            {
                 canvasGroup.alpha = unlocked ? 1f : 0.4f;
-            }
         }
     }
 }
