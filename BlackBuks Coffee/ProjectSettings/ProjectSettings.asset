@@ -825,6 +825,7 @@ PlayerSettings:
   webWasm2023: 0
   scriptingDefineSymbols:
     Standalone: SENTIS_ANALYTICS_ENABLED
+    Windows Store Apps: SENTIS_ANALYTICS_ENABLED
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend:
@@ -847,11 +848,11 @@ PlayerSettings:
   m_MobileRenderingPath: 1
   metroPackageName: BlackBuks Coffee
   metroPackageVersion: 
-  metroCertificatePath: 
+  metroCertificatePath: Assets/WSATestCertificate.pfx
   metroCertificatePassword: 
-  metroCertificateSubject: 
-  metroCertificateIssuer: 
-  metroCertificateNotAfter: 0000000000000000
+  metroCertificateSubject: DefaultCompany
+  metroCertificateIssuer: DefaultCompany
+  metroCertificateNotAfter: 0002155e699bde01
   metroApplicationDescription: BlackBuks Coffee
   wsaImages: {}
   metroTileShortName: 
