@@ -15,7 +15,7 @@ EditorBuildSettings:
     path: Assets/Scenes/LoadingScreen.unity
     guid: f37e6e6ff19d6ff4ea61a63c6329a35b
   - enabled: 1
-    path: Assets/Cosas Diego/EscenaNiggaOmar.unity
+    path: Assets/Cosas Diego/MATAR.unity
     guid: aa0b4f1c56010ac4b845ea09c78bb425
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
