@@ -82,7 +82,7 @@ public class OrderTable : MonoBehaviour, IInteractable
         if (deliveryOrderUI == null)
         {
             Debug.LogError(
-                "DeliveryOrderUI no está asignado en DeliveryTable."
+                "DeliveryOrderUI no estï¿½ asignado en DeliveryTable."
             );
             return;
         }
@@ -96,7 +96,7 @@ public class OrderTable : MonoBehaviour, IInteractable
 
         if (order == null || !_storedOrders.Contains(order))
         {
-            LastAssignmentMessage = "El pedido ya no está disponible.";
+            LastAssignmentMessage = "El pedido ya no estï¿½ disponible.";
             return false;
         }
 
@@ -114,7 +114,7 @@ public class OrderTable : MonoBehaviour, IInteractable
 
         if (CustomerManager.Instance == null)
         {
-            LastAssignmentMessage = "No se encontró el sistema de clientes.";
+            LastAssignmentMessage = "No se encontrï¿½ el sistema de clientes.";
             return false;
         }
 
@@ -122,14 +122,12 @@ public class OrderTable : MonoBehaviour, IInteractable
 
         if (customer == null)
         {
-            LastAssignmentMessage = "No hay ningún cliente con ese nombre en espera.";
+            LastAssignmentMessage = "No hay ningï¿½n cliente con ese nombre en espera.";
             return false;
         }
 
-        // NUEVO: Validar si los colores entregados coinciden con los que pidió
         bool isOrderCorrect = CheckIfOrderMatches(order.colors, customer.PendingOrder);
 
-        // Asociar el pedido al cliente.
         order.customerName = customer.CustomerName;
 
         System.Action<CustomerTesting> onArrived = null;
@@ -139,11 +137,10 @@ public class OrderTable : MonoBehaviour, IInteractable
             arrivedCustomer.OnArrivedAtOrderTable -= onArrived;
             _storedOrders.Remove(order);
 
-            // NUEVO: Aplicar bonificación o penalización
             if (isOrderCorrect)
             {
                 arrivedCustomer.ModifyScore(10f);
-                Debug.Log($"¡Bebida Correcta! +10 pts. Puntos finales del cliente: {arrivedCustomer.CurrentScore}");
+                Debug.Log($"ï¿½Bebida Correcta! +10 pts. Puntos finales del cliente: {arrivedCustomer.CurrentScore}");
             }
             else
             {
@@ -151,13 +148,12 @@ public class OrderTable : MonoBehaviour, IInteractable
                 Debug.Log($"Bebida Incorrecta. -35 pts. Puntos finales del cliente: {arrivedCustomer.CurrentScore}");
             }
 
-            // NUEVO: Enviar a la sumatoria global
             if (ScoreManager.Instance != null)
             {
                 ScoreManager.Instance.AddScore(arrivedCustomer.CurrentScore);
             }
 
-            Debug.Log($"El cliente {arrivedCustomer.CustomerName} recogió su pedido.");
+            Debug.Log($"El cliente {arrivedCustomer.CustomerName} recogiï¿½ su pedido.");
         };
 
         customer.OnArrivedAtOrderTable += onArrived;
@@ -171,7 +167,7 @@ public class OrderTable : MonoBehaviour, IInteractable
         return true;
     }
 
-    // NUEVO MÉTODO AUXILIAR: Compara las listas ignorando el orden de los elementos
+    // NUEVO Mï¿½TODO AUXILIAR: Compara las listas ignorando el orden de los elementos
     private bool CheckIfOrderMatches(List<SphereColor> delivered, IReadOnlyList<SphereColor> requested)
     {
         if (delivered.Count != requested.Count) return false;

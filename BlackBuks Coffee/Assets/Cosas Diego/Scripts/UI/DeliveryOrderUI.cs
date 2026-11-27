@@ -356,7 +356,6 @@ public class DeliveryOrderUI : MonoBehaviour
     {
         _matchedCustomerName = "";
 
-        // Verificar si el combo ingresado coincide exactamente con algún cliente
         foreach (var entry in _customerCombos)
         {
             ComboButton[] target = entry.Value;
@@ -379,7 +378,6 @@ public class DeliveryOrderUI : MonoBehaviour
             }
         }
 
-        // Si ya ingresó 4 botones y no coincidió con nadie, reiniciar automáticamente
         if (_enteredCombo.Count >= 4)
         {
             _enteredCombo.Clear();

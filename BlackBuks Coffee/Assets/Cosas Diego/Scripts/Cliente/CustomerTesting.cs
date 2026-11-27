@@ -196,7 +196,6 @@ public class CustomerTesting : MonoBehaviour
     {
         _state = CustomerState.WaitingAtRegister;
 
-        // Calcular pérdida proporcional: (Puntos actuales / Tiempo de paciencia)
         _currentDecayRate = _currentScore / _patience;
 
         if (CustomerManager.Instance != null)
@@ -230,7 +229,7 @@ public class CustomerTesting : MonoBehaviour
         switch (_customerName)
         {
             case "Michelle":
-                // Un café y un panqué
+                // Un cafï¿½ y un panquï¿½
                 _pendingOrder.Add(SphereColor.Red);
                 _pendingOrder.Add(SphereColor.Green);
                 break;
@@ -241,35 +240,35 @@ public class CustomerTesting : MonoBehaviour
                 break;
 
             case "Daniel":
-                // Solo un café
+                // Solo un cafï¿½
                 _pendingOrder.Add(SphereColor.Red);
                 break;
 
             case "Omar":
-                // Café y malteada
+                // Cafï¿½ y malteada
                 _pendingOrder.Add(SphereColor.Red);
                 _pendingOrder.Add(SphereColor.Blue);
                 break;
 
             case "Valentina":
-                // Malteada y panqué
+                // Malteada y panquï¿½
                 _pendingOrder.Add(SphereColor.Blue);
                 _pendingOrder.Add(SphereColor.Green);
                 break;
 
             case "Carlos":
-                // Dos cafés
+                // Dos cafï¿½s
                 _pendingOrder.Add(SphereColor.Red);
                 _pendingOrder.Add(SphereColor.Red);
                 break;
 
             case "Aime":
-                // Solo un panqué
+                // Solo un panquï¿½
                 _pendingOrder.Add(SphereColor.Green);
                 break;
 
             case "Mateo":
-                // Café, malteada y panqué (pedido completo)
+                // Cafï¿½, malteada y panquï¿½ (pedido completo)
                 _pendingOrder.Add(SphereColor.Red);
                 _pendingOrder.Add(SphereColor.Blue);
                 _pendingOrder.Add(SphereColor.Green);
@@ -282,14 +281,14 @@ public class CustomerTesting : MonoBehaviour
                 break;
 
             case "Andres":
-                // Dos cafés y un panqué
+                // Dos cafï¿½s y un panquï¿½
                 _pendingOrder.Add(SphereColor.Red);
                 _pendingOrder.Add(SphereColor.Red);
                 _pendingOrder.Add(SphereColor.Green);
                 break;
 
             default:
-                // Respaldo aleatorio en caso de que se añada un nombre nuevo en el Inspector
+                // Respaldo aleatorio en caso de que se aï¿½ada un nombre nuevo en el Inspector
                 int itemCount = UnityEngine.Random.Range(1, Mathf.Max(1, maxItems) + 1);
                 int colorCount = Enum.GetValues(typeof(SphereColor)).Length;
 
@@ -379,7 +378,7 @@ public class CustomerTesting : MonoBehaviour
         {
             CustomerManager.Instance.RefreshCustomerPatience(this, _patience);
 
-            // Recalcular la tasa de pérdida con los nuevos puntos y el nuevo tiempo
+            // Recalcular la tasa de pï¿½rdida con los nuevos puntos y el nuevo tiempo
             float extraTime = Mathf.Max(0, _pendingOrder.Count - 1) * 5f;
             float newPatience = _patience + extraTime;
             _currentDecayRate = _currentScore / newPatience;
